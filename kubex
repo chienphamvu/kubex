@@ -7,17 +7,16 @@ if [ "$KUBEX_ISOLATED" = "true" ]; then
   last_list_file="/tmp/last_list_${session_id}.txt"
 else
   last_list_file="/tmp/last_list.txt"
-
-  # Create a temporary kubeconfig file for the session
-  session_id=$(tty | sed 's/\/dev\///' | tr -cd A-Za-z0-9_)
-  kubeconfig_session_file="/tmp/kubeconfig_${session_id}.yaml"
-
-  # Function to copy the current context to the session kubeconfig
-  copy_current_context_to_session() {
-    kubectl config view --minify --output=yaml > "$kubeconfig_session_file"
-  }
-
 fi
+
+# Create a temporary kubeconfig file for the session
+session_id=$(tty | sed 's/\/dev\///' | tr -cd A-Za-z0-9_)
+kubeconfig_session_file="/tmp/kubeconfig_${session_id}.yaml"
+
+# Function to copy the current context to the session kubeconfig
+copy_current_context_to_session() {
+  kubectl config view --minify --output=yaml > "$kubeconfig_session_file"
+}
 
 COMMAND=$1
 shift
