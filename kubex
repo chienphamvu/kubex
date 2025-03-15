@@ -286,9 +286,9 @@ handle_get() {
   fi
  
   if [ -n "$grep_string" ]; then
-    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@ | grep "$grep_string"
+    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $namespace_arg $context_arg $@ | grep "$grep_string"
   else
-    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@
+    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $namespace_arg $context_arg $@
   fi
 }
 
