@@ -200,6 +200,8 @@ handle_get() {
   local switch_ns
   local grep_string
   local namespace_substring
+  local switch_ctx
+  local context_substring
 
   shift
 
@@ -220,14 +222,19 @@ handle_get() {
 
   local namespace_arg=""
   local context_arg=""
- 
+
   if [[ "$1" == "on" ]]; then
-    context_name="$2"
+    switch_ctx=true
+    context_substring="$2"
     shift 2
   fi
- 
+
   if [ -n "$switch_ns" ]; then
     namespace=$(grep_and_switch_namespace "$namespace_substring")
+  fi
+
+  if [ -n "$switch_ctx" ]; then
+    context=$(grep_and_switch_cluster "$context_substring")
   fi
 
   if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
@@ -287,11 +294,11 @@ handle_get() {
   if [ -n "$namespace" ]; then
     namespace_arg="--namespace=$namespace"
   fi
- 
-  if [ -n "$context_name" ]; then
-    context_arg="--context=$context_name"
+
+  if [ -n "$context" ]; then
+    context_arg="--context=$context"
   fi
- 
+
   if [ -n "$grep_string" ]; then
     list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" "$namespace_arg" "$context_arg" $@ | grep "$grep_string"
   else
