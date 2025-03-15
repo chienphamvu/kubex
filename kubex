@@ -103,16 +103,15 @@ list_items() {
 
   local args=()
   if [ "$KUBEX_ISOLATED" = "true" ]; then
-    args+=("--kubeconfig=$kubeconfig_session_file")
     args+=("$namespace_arg")
     args+=("$context_arg")
   fi
 
   if [[ "$@" == *"-w"* ]] || [[ "$@" == "--watch" ]]; then
-    kubecolor --kubeconfig="$kubeconfig_session_file" get "$object" "$@"
+    kubecolor get "$object" "${args[@]}" "$@"
   else
     echo "$object" > $last_list_file
-    kubecolor --kubeconfig="$kubeconfig_session_file" get "$object" --force-colors "$@" >> $last_list_file
+    kubecolor get "$object" --force-colors "${args[@]}" "$@" >> $last_list_file
     make_list_numbered $last_list_file
     tail -n +2 $last_list_file
   fi
