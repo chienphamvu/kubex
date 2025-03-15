@@ -37,7 +37,13 @@ grep_and_switch_namespace() {
   # Read existing context and namespace from session config
   read_session_config
 
-  local namespaces_file="/tmp/namespaces_$(kubectl config current-context).txt"
+  if [ "$KUBEX_ISOLATED" = "true" ]; then
+    # Use the terminal session ID to isolate the namespace list
+    session_id=$(tty | sed 's/\/dev\///')
+    local namespaces_file="/tmp/namespaces_$(kubectl config current-context)_${session_id}.txt"
+  else
+    local namespaces_file="/tmp/namespaces_$(kubectl config current-context).txt"
+  fi
 
   if [[ $namespace_substring =~ ^[0-9]+$ ]]; then
     namespace_substring=$(get_item_name "$namespace_substring")
@@ -123,6 +129,14 @@ grep_and_switch_cluster() {
 
   # Read existing context and namespace from session config
   read_session_config
+
+  if [ "$KUBEX_ISOLATED" = "true" ]; then
+    # Use the terminal session ID to isolate the context list
+    session_id=$(tty | sed 's/\/dev\///')
+    local contexts_file="/tmp/contexts_$(kubectl config current-context)_${session_id}.txt"
+  else
+    local contexts_file="/tmp/contexts_$(kubectl config current-context).txt"
+  fi
 
   handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
   CONTEXT="$MATCH"
