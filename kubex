@@ -9,13 +9,22 @@ else
   last_list_file="/tmp/last_list.txt"
 fi
 
-# Create a temporary kubeconfig file for the session
+# Create a temporary file to store context and namespace for the session
 session_id=$(tty | sed 's/\/dev\///' | tr -cd A-Za-z0-9_)
-kubeconfig_session_file="/tmp/kubeconfig_${session_id}.yaml"
+session_config_file="/tmp/kubex_session_${session_id}.conf"
 
-# Function to copy the current context to the session kubeconfig
-copy_current_context_to_session() {
-  kubectl config view --minify --output=yaml > "$kubeconfig_session_file"
+# Function to write context and namespace to the session config file
+write_session_config() {
+  echo "context: $1" > "$session_config_file"
+  echo "namespace: $2" >> "$session_config_file"
+}
+
+# Function to read context and namespace from the session config file
+read_session_config() {
+  if [ -f "$session_config_file" ]; then
+    CONTEXT=$(grep "context:" "$session_config_file" | awk -F': ' '{print $2}')
+    NAMESPACE=$(grep "namespace:" "$session_config_file" | awk -F': ' '{print $2}')
+  fi
 }
 
 COMMAND=$1
@@ -24,6 +33,9 @@ shift
 grep_and_switch_namespace() {
   local namespace_substring=$1
   MATCH=""
+
+  # Read existing context and namespace from session config
+  read_session_config
 
   namespaces_file="/tmp/namespaces_$(kubectl config current-context).txt"
 
@@ -41,8 +53,9 @@ grep_and_switch_namespace() {
 
   # switch default namespace
   if [ -n "$MATCH" ]; then
-    kubectl config --kubeconfig="$kubeconfig_session_file" set-context --current --namespace="$MATCH" > /dev/null
+    NAMESPACE="$MATCH"
     echo "Switched default namespace to $MATCH (session-only)"
+    write_session_config "$CONTEXT" "$NAMESPACE"
   else
     echo "No namespace matches '$namespace_substring'!"
     exit 1
@@ -113,8 +126,12 @@ grep_and_switch_cluster() {
   local cluster=$1
   MATCH=""
 
+  # Read existing context and namespace from session config
+  read_session_config
+
   handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
-  kubectl config --kubeconfig="$kubeconfig_session_file" use-context "$MATCH"
+  CONTEXT="$MATCH"
+  write_session_config "$CONTEXT" "$NAMESPACE"
 }
 
 get_object_details() {
@@ -203,6 +220,9 @@ handle_get() {
 
   shift
 
+  # Read existing context and namespace from session config
+  read_session_config
+
   if [[ "$OBJECT" == "last" ]]; then
     show_last_list "$@"
     exit 0
@@ -218,22 +238,6 @@ handle_get() {
     shift 2
   fi
 
-  local namespace_arg=""
-  local context_arg=""
-
-  if [[ "$1" == "in" ]]; then
-    if [[ "$2" == "all" ]]; then
-      ALL_NAMESPACES_OPTIONS="--all-namespaces"
-    else
-      switch_ns=true
-      namespace_substring="$2"
-    fi
-    shift 2
-  fi
-
-  local namespace_arg=""
-  local context_arg=""
-
   if [[ "$1" == "on" ]]; then
     switch_ctx=true
     context_substring="$2"
@@ -241,12 +245,11 @@ handle_get() {
   fi
 
   if [ -n "$switch_ns" ]; then
-    namespace=$(grep_and_switch_namespace "$namespace_substring")
+    NAMESPACE=$(grep_and_switch_namespace "$namespace_substring")
   fi
 
   if [ -n "$switch_ctx" ]; then
-    context=$(grep_and_switch_cluster "$context_substring")
-    copy_current_context_to_session
+    CONTEXT=$(grep_and_switch_cluster "$context_substring")
   fi
 
   if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
@@ -303,16 +306,12 @@ handle_get() {
     ;;
   esac
 
-  if [ -n "$namespace" ]; then
-    namespace_arg="--namespace=$namespace"
+  if [ -n "$NAMESPACE" ]; then
+    namespace_arg="--namespace=$NAMESPACE"
   fi
 
-  if [ -n "$namespace" ]; then
-    namespace_arg="--namespace=$namespace"
-  fi
-
-  if [ -n "$context" ]; then
-    context_arg="--context=$context"
+  if [ -n "$CONTEXT" ]; then
+    context_arg="--context=$CONTEXT"
   fi
 
   if [ -n "$grep_string" ]; then
@@ -326,9 +325,8 @@ handle_describe() {
   local item_number=$1
   shift
 
-  if [ -n "$KUBEX_NAMESPACE" ]; then
-    namespace_arg="--namespace=$KUBEX_NAMESPACE"
-  fi
+  # Read existing context and namespace from session config
+  read_session_config
 
   if [ -z "$item_number" ]; then
       kubecolor describe
@@ -338,7 +336,7 @@ handle_describe() {
   get_object_details "$item_number"
  
   set -x
-  kubecolor --kubeconfig="$kubeconfig_session_file" describe "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+  kubecolor describe --context="$CONTEXT" --namespace="$NAMESPACE" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
 }
 
 handle_delete() {
@@ -367,9 +365,8 @@ handle_edit() {
   local item_number=$1
   shift
 
-  if [ -n "$KUBEX_NAMESPACE" ]; then
-    namespace_arg="--namespace=$KUBEX_NAMESPACE"
-  fi
+  # Read existing context and namespace from session config
+  read_session_config
 
   if [ -z "$item_number" ]; then
       kubectl edit
@@ -379,7 +376,7 @@ handle_edit() {
   get_object_details "$item_number"
  
   set -x
-  kubectl --kubeconfig="$kubeconfig_session_file" edit "$OBJECT_TYPE" "$ITEM_NAME"
+  kubectl edit --context="$CONTEXT" --namespace="$NAMESPACE" "$OBJECT_TYPE" "$ITEM_NAME"
 }
 
 handle_top() {
@@ -389,9 +386,8 @@ handle_top() {
   local namespace
   local cluster_project
 
-  if [ -n "$KUBEX_NAMESPACE" ]; then
-    namespace_arg="--namespace=$KUBEX_NAMESPACE"
-  fi
+  # Read existing context and namespace from session config
+  read_session_config
 
   if [ -z "$item_number" ]; then
       kubecolor top
@@ -413,15 +409,19 @@ handle_top() {
   fi
  
   set -x
-  kubecolor --kubeconfig="$kubeconfig_session_file" top "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+  kubecolor top --context="$CONTEXT" --namespace="$NAMESPACE" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
 }
 
 handle_switch() {
   local context_name=$1
 
+  # Read existing context and namespace from session config
+  read_session_config
+
   kubectl config use-context "$context_name"
+  CONTEXT="$context_name"
   kubectl get namespaces > "/tmp/namespaces_$(kubectl config current-context).txt"
-  copy_current_context_to_session
+  write_session_config "$CONTEXT" "$NAMESPACE"
 }
 
 handle_logs() {
@@ -431,9 +431,8 @@ handle_logs() {
   local namespace
   local cluster_project
 
-  if [ -n "$KUBEX_NAMESPACE" ]; then
-    namespace_arg="--namespace=$KUBEX_NAMESPACE"
-  fi
+  # Read existing context and namespace from session config
+  read_session_config
 
   if [ -z "$item_number" ]; then
       kubecolor logs
@@ -465,7 +464,7 @@ handle_logs() {
   fi
  
   set -x
-  kubectl --kubeconfig="$kubeconfig_session_file" logs "$OBJECT_TYPE"/"$ITEM_NAME" $tail_option "$@"
+  kubectl logs --context="$CONTEXT" --namespace="$NAMESPACE" "$OBJECT_TYPE"/"$ITEM_NAME" $tail_option "$@"
 }
 
 handle_rr() {
@@ -493,9 +492,8 @@ handle_events() {
   item_number=$1
   shift
 
-  if [ -n "$KUBEX_NAMESPACE" ]; then
-    namespace_arg="--namespace=$KUBEX_NAMESPACE"
-  fi
+  # Read existing context and namespace from session config
+  read_session_config
 
   if [ -z "$item_number" ]; then
       kubecolor events
@@ -506,7 +504,7 @@ handle_events() {
   local item_name=$(get_item_name "$item_number")
  
   set -x
-  kubecolor --kubeconfig="$kubeconfig_session_file" events --for "$object_type"/"$item_name" "$@"
+  kubecolor events --context="$CONTEXT" --namespace="$NAMESPACE" --for "$object_type"/"$item_name" "$@"
 }
 
 handle_exec() {
