@@ -95,13 +95,10 @@ get_item_name() {
 
 list_items() {
   local object=$1
-  local namespace_arg=$2
-  local context_arg=$3
-
-  shift 3
+  shift
 
   if [ "$KUBEX_ISOLATED" = "true" ]; then
-    local args=("$namespace_arg" "$context_arg")
+    local args=("--namespace=$NAMESPACE" "--context=$CONTEXT")
   else
     local args=()
   fi
