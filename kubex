@@ -1,0 +1,464 @@
+#!/bin/bash
+
+last_list_file="/tmp/last_list.txt"
+COMMAND=$1
+shift
+
+grep_and_switch_namespace() {
+  local namespace_substring=$1
+  MATCH=""
+
+  namespaces_file="/tmp/namespaces_$(kubectl config current-context).txt"
+
+  if [[ $namespace_substring =~ ^[0-9]+$ ]] ; then
+    namespace_substring=$(get_item_name $namespace_substring)
+  fi
+
+  if ! ([ -f "$namespaces_file" ]) || ([ -f "$namespaces_file" ] && ! grep -q "$namespace_substring" "$namespaces_file"); then
+    touch "$namespaces_file"
+    echo "Getting namespaces..."
+    kubectl get namespaces > "$namespaces_file"
+  fi
+
+  # if grep -q "^${namespace_substring}\s" "$namespaces_file"; then
+  #     # prioritize exact match
+  #     namespace=$(grep "^${namespace_substring}\s" "$namespaces_file" | head -n 1 | awk '{print $1}')
+  # else
+  #   # otherwise grep the first match namespace
+  #   namespace=$(grep "$namespace_substring" "$namespaces_file" | head -n 1 | awk '{print $1}')
+  # fi
+
+  handle_matching "$namespace_substring" "$namespaces_file" "namespace"
+
+  # switch default namespace
+  if [ -n "$MATCH" ]; then
+    kubectl config set-context --current=true --namespace="$MATCH" > /dev/null
+    echo "Switched default namespace to $MATCH"
+  else
+    echo "No namespace matches $namespace_substring!"
+    exit 1
+  fi
+}
+
+make_list_numbered() {
+  local line_number=-1
+  local tmpfile=$(mktemp)
+
+  while IFS= read -r line; do
+    if [[ "$line_number" -eq -1 ]]; then
+      echo "$line" >> "$tmpfile"
+    elif [[ "$line_number" -eq 0 ]]; then
+      printf "  %s\n" "$line" >> "$tmpfile"
+    else
+      printf "%d %s\n" "$line_number" "$line" >> "$tmpfile"
+    fi
+    ((line_number++))
+  done < "$last_list_file"
+
+  mv "$tmpfile" "$last_list_file"
+}
+
+get_item_name() {
+  local line_number="$1"
+
+  # Extract the pod name using awk
+  item_name=$(awk -v line_num="$line_number" '$1 == line_num {print $2}' "$last_list_file" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
+
+  if [[ -n "$item_name" ]]; then
+    echo "$item_name"
+  else
+    echo "Error: '$line_number' does not exist!"
+    exit 1
+  fi
+}
+
+list_items() {
+  local object=$1
+
+  shift
+
+  if [[ "$@" == *"-w"* ]] || [[ "$@" == "--watch" ]]; then
+    kubecolor get $object $@
+  else
+    echo "$object" > $last_list_file
+    # echo "kubecolor get $object $@"
+    kubecolor get $object --force-colors $@ >> $last_list_file
+    make_list_numbered $last_list_file
+    tail -n +2 $last_list_file
+  fi
+}
+
+get_last_object_type() {
+  head -n 1 "$last_list_file"
+}
+
+grep_and_switch_cluster() {
+  local cluster=$1
+  MATCH=""
+
+  handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
+  kubectl config use-context "$MATCH"
+}
+
+handle_matching() {
+  local grep_string="$1"
+  local file="$2"
+  local resource_type="$3"
+
+  if [[ -z "$grep_string" || -z "$file" ]]; then
+    echo "Usage: $0 <grep_string> <file>"
+    exit 1
+  fi
+
+  if [[ ! -f "$file" ]]; then
+    matching_lines=$(echo "$file" | grep -n "$grep_string")
+  else
+    matching_lines=$(tail -n +2 "$file" | grep -n "$grep_string")
+  fi
+
+  if [[ -z "$matching_lines" ]]; then
+    echo "No matching ${resource_type} found."
+    exit 0
+  fi
+
+  line_count=$(echo "$matching_lines" | wc -l)
+
+  if [[ "$line_count" -eq 1 ]]; then
+    MATCH=$(echo "$matching_lines" | cut -d':' -f2- | awk '{print $1}')
+  elif [[ "$line_count" -gt 1 ]]; then
+    echo "Multiple matching ${resource_type} found:"
+    echo
+    echo "$matching_lines" | awk -F: '{print $1 ". " $2}' | awk '{print $1 " " $2}'
+    echo
+
+    read -p "Enter the line number to select: " selected_line_number
+
+    MATCH=$(echo "$matching_lines" | awk -F: -v line_num="$selected_line_number" '$1 == line_num {print $2}' | awk '{print $1}')
+  else
+    echo "Error: Unexpected condition."
+    exit 1
+  fi
+}
+
+show_last_list() {
+  local grep_string="$1"
+
+  if [ -n $1 ]; then
+    cat "$last_list_file" | grep "$1"
+  else
+    cat "$last_list_file"
+  fi
+}
+
+###############
+#   COMMANDS
+###############
+handle_get() {
+  local OBJECT=$1
+  local ALL_NAMESPACES_OPTIONS
+  local switch_ns
+  local grep_string
+  local namespace_substring
+
+  shift
+
+  if [[ "$OBJECT" == "last" ]]; then
+    show_last_list "$@"
+    exit 0
+  fi
+
+  if [[ "$1" == "in" ]]; then
+    if [[ "$2" == "all" ]]; then
+      ALL_NAMESPACES_OPTIONS="--all-namespaces"
+    else
+      switch_ns=true
+      namespace_substring="$2"
+    fi
+    shift 2
+  fi
+
+  if [[ "$1" == "on" ]]; then
+    grep_and_switch_cluster "$2"
+    shift 2
+  fi
+
+  if [[ "$1" == "in" ]]; then
+    if [[ "$2" == "all" ]]; then
+      ALL_NAMESPACES_OPTIONS="--all-namespaces"
+    else
+      switch_ns=true
+      namespace_substring="$2"
+    fi
+    shift 2
+  fi
+
+  if [ -n "$switch_ns" ]; then
+    grep_and_switch_namespace "$namespace_substring"
+  fi
+
+  if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+    grep_string="$1"
+    shift
+  fi
+
+  case "$OBJECT" in
+    "p") OBJECT="pod"
+    ;;
+    "d") OBJECT="deployment"
+    ;;
+    "svc") OBJECT="service"
+    ;;
+    "sa") OBJECT="ServiceAccount"
+    ;;
+    "a") OBJECT="applications"
+    ;;
+    "vs") OBJECT="VirtualServices"
+    ;;
+    "mc") OBJECT="ManagedCertificate"
+    ;;
+    "se") OBJECT="ServiceEntry"
+    ;;
+    "sec") OBJECT="secret"
+    ;;
+    "ss") OBJECT="StatefulSets"
+    ;;
+    "ds") OBJECT="DaemonSets"
+    ;;
+    "rs") OBJECT="ReplicaSets"
+    ;;
+    "rc") OBJECT="ReplicaControllers"
+    ;;
+    "j") OBJECT="job"
+    ;;
+    "cj") OBJECT="cronjob"
+    ;;
+    "gw") OBJECT="gateway"
+    ;;
+    "i") OBJECT="ingress"
+    ;;
+    "bc") OBJECT="BackendConfig"
+    ;;
+    "dr") OBJECT="DestinationRule"
+    ;;
+    "rb") OBJECT="rolebinding"
+    ;;
+    "r") OBJECT="roles"
+    ;;
+    "crb") OBJECT="clusterrolebinding"
+    ;;
+    "cr") OBJECT="clusterroles"
+    ;;
+  esac
+
+  if [ -n "$grep_string" ]; then
+    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@ | grep "$grep_string"
+  else
+    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@
+  fi
+}
+
+handle_describe() {
+  local item_number=$1
+  shift
+
+  if [ -z "$item_number" ]; then
+      kubecolor describe
+      exit 1
+  fi
+
+  local object_type=$(get_last_object_type)
+  local item_name=$(get_item_name "$item_number")
+
+  set -x
+  kubecolor describe "$object_type" "$item_name" "$@"
+}
+
+handle_delete() {
+  local item_number=$1
+  shift
+
+  if [ -z "$item_number" ]; then
+      kubecolor delete
+      exit 1
+  fi
+
+  local object_type=$(get_last_object_type)
+  local item_name=$(get_item_name "$item_number")
+
+  read -p "Delete $object_type $item_name (y/N)? " -r REPLY
+  echo
+
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    set -x
+    kubecolor delete "$object_type" "$item_name" "$@"
+  else
+    echo "Keep it then!"
+  fi
+}
+
+handle_edit() {
+  local item_number=$1
+
+  if [ -z "$item_number" ]; then
+      kubectl edit
+      exit 1
+  fi
+
+  local object_type=$(get_last_object_type)
+  local item_name=$(get_item_name "$item_number")
+
+  set -x
+  kubectl edit "$object_type" "$item_name"
+}
+
+handle_top() {
+  local item_number=$1
+  shift
+  local current_context
+  local namespace
+  local cluster_project
+
+  source "$HOME/tools/kkfunction.sh"
+
+  if [ -z "$item_number" ]; then
+      kubecolor top
+      exit 1
+  fi
+
+  local object_type=$(get_last_object_type)
+  local item_name=$(get_item_name "$item_number")
+
+  if [[ "$@" == *"--gcp"* ]]; then
+    current_context=$(kubectl config get-contexts | grep "*")
+    namespace=$(echo "$current_context" | awk '{print $5}')
+    cluster_project=$(echo "$current_context" | awk '{print $3}' | awk -F'_' '{print $2}')
+
+    open "https://console.cloud.google.com/monitoring/metrics-explorer;duration=PT1H?referrer=search&project=${cluster_project}&pageState=%7B%22xyChart%22:%7B%22constantLines%22:%5B%5D,%22dataSets%22:%5B%7B%22plotType%22:%22LINE%22,%22targetAxis%22:%22Y1%22,%22timeSeriesFilter%22:%7B%22aggregations%22:%5B%7B%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%5D,%22apiSource%22:%22DEFAULT_CLOUD%22,%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22filter%22:%22metric.type%3D%5C%22kubernetes.io%2Fcontainer%2Fmemory%2Fused_bytes%5C%22%20resource.type%3D%5C%22k8s_container%5C%22%20metric.label.%5C%22memory_type%5C%22%3D%5C%22non-evictable%5C%22%20resource.label.%5C%22namespace_name%5C%22%3D%5C%22${namespace}%5C%22%20resource.label.%5C%22container_name%5C%22!%3D%5C%22istio-proxy%5C%22%20resource.label.%5C%22pod_name%5C%22%3D%5C%22${item_name}%5C%22%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22minAlignmentPeriod%22:%2260s%22,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%7D,%7B%22plotType%22:%22LINE%22,%22targetAxis%22:%22Y1%22,%22timeSeriesFilter%22:%7B%22aggregations%22:%5B%7B%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%5D,%22apiSource%22:%22DEFAULT_CLOUD%22,%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22filter%22:%22metric.type%3D%5C%22kubernetes.io%2Fcontainer%2Fmemory%2Flimit_bytes%5C%22%20resource.type%3D%5C%22k8s_container%5C%22%20resource.label.%5C%22namespace_name%5C%22%3D%5C%22${namespace}%5C%22%20resource.label.%5C%22container_name%5C%22!%3D%5C%22istio-proxy%5C%22%20resource.label.%5C%22pod_name%5C%22%3D%5C%22${item_name}%5C%22%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22minAlignmentPeriod%22:%2260s%22,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%7D,%7B%22plotType%22:%22LINE%22,%22targetAxis%22:%22Y1%22,%22timeSeriesFilter%22:%7B%22aggregations%22:%5B%7B%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%5D,%22apiSource%22:%22DEFAULT_CLOUD%22,%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22filter%22:%22metric.type%3D%5C%22kubernetes.io%2Fcontainer%2Fmemory%2Frequest_bytes%5C%22%20resource.type%3D%5C%22k8s_container%5C%22%20resource.label.%5C%22namespace_name%5C%22%3D%5C%22${namespace}%5C%22%20resource.label.%5C%22container_name%5C%22!%3D%5C%22istio-proxy%5C%22%20resource.label.%5C%22pod_name%5C%22%3D%5C%22${item_name}%5C%22%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22minAlignmentPeriod%22:%2260s%22,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%7D%5D,%22options%22:%7B%22mode%22:%22COLOR%22%7D,%22y1Axis%22:%7B%22label%22:%22%22,%22scale%22:%22LINEAR%22%7D%7D%7D&inv=1&invt=AbqsyA"
+
+    exit 0
+  fi
+
+  set -x
+  kubecolor top "$object_type" "$item_name" $@
+}
+
+handle_switch() {
+  local context_name=$1
+
+  kubectl config use-context "$context_name"
+  kubectl get namespaces > "/tmp/namespaces_$(kubectl config current-context).txt"
+}
+
+handle_logs() {
+  local item_number=$1
+  shift
+  local current_context
+  local namespace
+  local cluster_project
+
+  local object_type=$(get_last_object_type)
+  local item_name=$(get_item_name "$item_number")
+
+  if [[ "$@" == *"--gcp"* ]]; then
+    current_context=$(kubectl config get-contexts | grep "*")
+    namespace=$(echo "$current_context" | awk '{print $5}')
+    cluster_project=$(echo "$current_context" | awk '{print $3}' | awk -F'_' '{print $2}')
+
+    open "https://console.cloud.google.com/logs/query;query=logName%3D%2528%22projects%2F${cluster_project}%2Flogs%2Fstderr%22%20OR%20%22projects%2F${cluster_project}%2Flogs%2Fstdout%22%2529%0Aresource.labels.namespace_name%3D%22${namespace}%22%0Aresource.labels.pod_name%3D%22${item_name}%22%0Aresource.labels.container_name!%3D%22istio-proxy%22;duration=PT30M?referrer=search&project=${cluster_project}"
+
+    exit 0
+  fi
+
+  local tail_option=""
+  if [[ "$@" == *"-f"* ]] || [[ "$@" == "--follow=true" ]]; then
+    # By default, get only the last 50 line of logs if not streaming
+    tail_option="--tail=50"
+
+    if [[ "$@" == *"--tail"* ]]; then
+      tail_option=""
+    fi
+  fi
+
+  set -x
+  kubectl logs "$object_type"/"$item_name" $tail_option "$@"
+}
+
+handle_rr() {
+  local item_number=$1
+  local object_type
+  local item_name
+
+  if [ -z "$item_number" ]; then
+      kubecolor rollout restart
+      exit 1
+  fi
+
+  if [[ $item_number =~ ^[0-9]+$ ]]; then
+    object_type=$(get_last_object_type)
+    item_name=$(get_item_name "$item_number")
+    set -x
+    kubecolor rollout restart "$object_type"/"$item_name"
+  else
+    set -x
+    kubecolor rollout restart "$item_number"
+  fi
+}
+
+handle_events() {
+  item_number=$1
+
+  if [ -z "$item_number" ]; then
+      kubecolor events
+      exit 1
+  fi
+
+  local object_type=$(get_last_object_type)
+  local item_name=$(get_item_name "$item_number")
+
+  set -x
+  kubecolor events --for "$object_type"/"$item_name" "$@"
+}
+
+handle_exec() {
+  local item_number=$1
+  shift
+
+  kubectl exec -t -i $(get_item_name $item_number) "$@" -- sh -c "(bash || ash || sh)"
+}
+
+case "$COMMAND" in
+  "get")
+    handle_get "$@"
+    ;;
+  "describe")
+    handle_describe "$@"
+    ;;
+  "delete")
+    handle_delete "$@"
+    ;;
+  "edit")
+    handle_edit "$@"
+    ;;
+  "top")
+    handle_top "$@"
+    ;;
+  "switch")
+    handle_switch "$@"
+    ;;
+  "logs")
+    handle_logs "$@"
+    ;;
+  "rr")
+    handle_rr "$@"
+    ;;
+  "events")
+    handle_events "$@"
+    ;;
+  "exec")
+    handle_exec "$@"
+    ;;
+  *)
+    echo "Invalid command: $COMMAND"
+    exit 1
+    ;;
+esac

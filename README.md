@@ -1,4 +1,4 @@
-# kubectl-boost - Kubernetes Productivity Toolkit
+# kubectl-extreme - Kubernetes Productivity Toolkit
 
 ## Installation
 
@@ -8,27 +8,27 @@ export KUBECOLOR_PRESET="protanopia-dark"  # Color-blind friendly theme
 
 # Add these aliases to your shell config (zshrc/bashrc):
 alias kcgc='kubectl config get-contexts'
-alias kgp='kg p'
-alias kgd='kg d'
-alias kgns='kg ns'
-alias kgsvc='kg svc'
-alias kgvs='kg vs'
-alias kggw='kg gateway'
-alias kgcm='kg cm'
-alias kghpa='kg hpa'
-alias kgse='kg se'
-alias kgds='kg ds'
-alias kgrs='kg rs'
-alias kgsec='kg sec'
-alias kgn='kg n'
-alias kd='kg d'
-alias kdel='kubectl delete'
-alias kl='kubectl logs'
-alias keti='kubectl exec'
-alias kev='kubectl events'
-alias ke='kubectl edit'
-alias krr='kubectl rollout restart'
-alias ks='kubectl config use-context'
+alias kgp='kubex get pods'
+alias kgd='kubex get deployments'
+alias kgns='kubex get namespace'
+alias kgsvc='kubex get service'
+alias kgvs='kubex get virtualservice'
+alias kggw='kubex get gateway'
+alias kgcm='kubex get configmap'
+alias kghpa='kubex get hpa'
+alias kgse='kubex get serviceentriy'
+alias kgds='kubex get daemonset'
+alias kgrs='kubex get replicaset'
+alias kgsec='kubex get secrets'
+alias kgn='kubex get nodes'
+alias kd='kubex describe'
+alias kdel='kubex delete'
+alias kl='kubex logs'
+alias keti='kubex exec'
+alias kev='kubex events'
+alias ke='kubex edit'
+alias krr='kubex rollout restart'
+alias ks='kubex switch'
 ```
 
 ## Command Reference
