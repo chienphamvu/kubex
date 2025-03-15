@@ -60,8 +60,13 @@ grep_and_switch_namespace() {
   # switch default namespace
   if [ -n "$MATCH" ]; then
     NAMESPACE="$MATCH"
-    echo "Switched default namespace to $MATCH (session-only)"
-    write_session_config "$CONTEXT" "$NAMESPACE"
+    if [ "$KUBEX_ISOLATED" = "false" ]; then
+      kubectl config set-context --current --namespace="$MATCH" > /dev/null
+      echo "Switched default namespace to $MATCH"
+    else
+      write_session_config "$CONTEXT" "$NAMESPACE"
+      echo "Switched default namespace to $MATCH (session-only)"
+    fi
   else
     echo "No namespace matches '$namespace_substring'!"
     exit 1
