@@ -343,23 +343,34 @@ handle_describe() {
   read_session_config
 
   if [ -z "$item_number" ]; then
-      kubecolor describe
-      exit 1
+    kubecolor describe
+    exit 1
   fi
- 
+
   get_object_details "$item_number"
- 
+
+  local args=()
+  if [ -n "$CONTEXT" ]; then
+    args+=("--context=$CONTEXT")
+  fi
+  if [ -n "$NAMESPACE" ]; then
+    args+=("--namespace=$NAMESPACE")
+  fi
+
   set -x
-  kubecolor describe --context="$CONTEXT" --namespace="$NAMESPACE" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+  kubecolor describe "${args[@]}" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
 }
 
 handle_delete() {
   local item_number=$1
   shift
 
+  # Read existing context and namespace from session config
+  read_session_config
+
   if [ -z "$item_number" ]; then
-      kubecolor delete
-      exit 1
+    kubecolor delete
+    exit 1
   fi
 
   get_object_details "$item_number"
@@ -368,8 +379,15 @@ handle_delete() {
   echo
 
   if [[ $REPLY =~ ^[Yy]$ ]]; then
+    local args=()
+    if [ -n "$CONTEXT" ]; then
+      args+=("--context=$CONTEXT")
+    fi
+    if [ -n "$NAMESPACE" ]; then
+      args+=("--namespace=$NAMESPACE")
+    fi
     set -x
-    kubecolor delete "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+    kubecolor delete "${args[@]}" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
   else
     echo "Keep it then!"
   fi
@@ -383,14 +401,22 @@ handle_edit() {
   read_session_config
 
   if [ -z "$item_number" ]; then
-      kubectl edit
-      exit 1
+    kubectl edit
+    exit 1
   fi
- 
+
   get_object_details "$item_number"
- 
+
+  local args=()
+  if [ -n "$CONTEXT" ]; then
+    args+=("--context=$CONTEXT")
+  fi
+  if [ -n "$NAMESPACE" ]; then
+    args+=("--namespace=$NAMESPACE")
+  fi
+
   set -x
-  kubectl edit --context="$CONTEXT" --namespace="$NAMESPACE" "$OBJECT_TYPE" "$ITEM_NAME"
+  kubectl edit "${args[@]}" "$OBJECT_TYPE" "$ITEM_NAME"
 }
 
 handle_top() {
@@ -404,26 +430,34 @@ handle_top() {
   read_session_config
 
   if [ -z "$item_number" ]; then
-      kubecolor top
-      exit 1
+    kubecolor top
+    exit 1
   fi
- 
+
   get_object_details "$item_number"
- 
+
   if [[ "$@" == *"--gcp"* ]]; then
     current_context=$(kubectl config get-contexts | grep "*")
     namespace=$(echo "$current_context" | awk '{print $5}')
     cluster_project=$(echo "$current_context" | awk '{print $3}' | awk -F'_' '{print $2}')
- 
+
     url=$(construct_gcp_url "$cluster_project" "$namespace" "$ITEM_NAME" "metrics")
- 
+
     open_gcp_console_url "$url"
- 
+
     exit 0
   fi
- 
+
+  local args=()
+  if [ -n "$CONTEXT" ]; then
+    args+=("--context=$CONTEXT")
+  fi
+  if [ -n "$NAMESPACE" ]; then
+    args+=("--namespace=$NAMESPACE")
+  fi
+
   set -x
-  kubecolor top --context="$CONTEXT" --namespace="$NAMESPACE" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+  kubecolor top "${args[@]}" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
 }
 
 handle_switch() {
@@ -449,36 +483,44 @@ handle_logs() {
   read_session_config
 
   if [ -z "$item_number" ]; then
-      kubecolor logs
-      exit 1
+    kubecolor logs
+    exit 1
   fi
- 
+
   get_object_details "$item_number"
- 
+
   if [[ "$@" == *"--gcp"* ]]; then
     current_context=$(kubectl config get-contexts | grep "*")
     namespace=$(echo "$current_context" | awk '{print $5}')
     cluster_project=$(echo "$current_context" | awk '{print $3}' | awk -F'_' '{print $2}')
- 
+
     url=$(construct_gcp_url "$cluster_project" "$namespace" "$ITEM_NAME" "logs")
- 
+
     open_gcp_console_url "$url"
- 
+
     exit 0
   fi
- 
+
   local tail_option=""
   if [[ "$@" == *"-f"* ]] || [[ "$@" == "--follow=true" ]]; then
     # By default, get only the last 50 line of logs if not streaming
     tail_option="--tail=50"
- 
+
     if [[ "$@" == *"--tail"* ]]; then
       tail_option=""
     fi
   fi
- 
+
+  local args=()
+  if [ -n "$CONTEXT" ]; then
+    args+=("--context=$CONTEXT")
+  fi
+  if [ -n "$NAMESPACE" ]; then
+    args+=("--namespace=$NAMESPACE")
+  fi
+
   set -x
-  kubectl logs --context="$CONTEXT" --namespace="$NAMESPACE" "$OBJECT_TYPE"/"$ITEM_NAME" $tail_option "$@"
+  kubectl logs "${args[@]}" "$OBJECT_TYPE"/"$ITEM_NAME" $tail_option "$@"
 }
 
 handle_rr() {
@@ -510,15 +552,23 @@ handle_events() {
   read_session_config
 
   if [ -z "$item_number" ]; then
-      kubecolor events
-      exit 1
+    kubecolor events
+    exit 1
   fi
- 
+
   local object_type=$(get_last_object_type)
   local item_name=$(get_item_name "$item_number")
- 
+
+  local args=()
+  if [ -n "$CONTEXT" ]; then
+    args+=("--context=$CONTEXT")
+  fi
+  if [ -n "$NAMESPACE" ]; then
+    args+=("--namespace=$NAMESPACE")
+  fi
+
   set -x
-  kubecolor events --context="$CONTEXT" --namespace="$NAMESPACE" --for "$object_type"/"$item_name" "$@"
+  kubecolor events "${args[@]}" --for "$object_type"/"$item_name" "$@"
 }
 
 handle_exec() {
