@@ -49,6 +49,7 @@ grep_and_switch_namespace() {
     echo "No namespace matches '$namespace_substring'!"
     exit 1
   fi
+  echo "$MATCH"
 }
 
 make_list_numbered() {
@@ -200,7 +201,6 @@ handle_get() {
     exit 0
   fi
 
-  # Consolidate 'in' flag handling
   if [[ "$1" == "in" ]]; then
     if [[ "$2" == "all" ]]; then
       ALL_NAMESPACES_OPTIONS="--all-namespaces"
@@ -220,7 +220,7 @@ handle_get() {
   fi
  
   if [ -n "$switch_ns" ]; then
-    namespace_substring=$(grep_and_switch_namespace "$namespace_substring")
+    namespace=$(grep_and_switch_namespace "$namespace_substring")
   fi
 
   if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
@@ -275,8 +275,10 @@ handle_get() {
     ;;
     "cr") OBJECT="clusterroles"
     ;;
-  if [ -n "$namespace_substring" ]; then
-    namespace_arg="--namespace=$namespace_substring"
+  esac
+
+  if [ -n "$namespace" ]; then
+    namespace_arg="--namespace=$namespace"
   fi
  
   if [ -n "$context_name" ]; then
