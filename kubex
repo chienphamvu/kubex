@@ -107,7 +107,7 @@ list_items() {
     kubecolor get "$object" ${args[@]} "$@"
   else
     echo "$object" > $last_list_file
-    kubecolor get "$object" --force-colors ${args[@]} "$@" >> $last_list_file
+    kubecolor get "$object" --force-colors ${args[@]} $@ >> $last_list_file
     make_list_numbered $last_list_file
     tail -n +2 $last_list_file
   fi
@@ -310,9 +310,9 @@ handle_get() {
   fi
 
   if [ -n "$grep_string" ]; then
-    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" "$namespace_arg" "$context_arg" $@ | grep "$grep_string"
+    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@ | grep "$grep_string"
   else
-    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" "$namespace_arg" "$context_arg" $@
+    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@
   fi
 }
 
