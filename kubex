@@ -21,7 +21,7 @@ write_session_config() {
 
 # Function to read context and namespace from the session config file
 read_session_config() {
-  if [ -f "$session_config_file" ]; then
+  if [ -f "$session_config_file" ] && [ "$KUBEX_ISOLATED" = "true" ]; then
     CONTEXT=$(grep "context:" "$session_config_file" | awk -F': ' '{print $2}')
     NAMESPACE=$(grep "namespace:" "$session_config_file" | awk -F': ' '{print $2}')
   fi
@@ -34,7 +34,7 @@ grep_and_switch_namespace() {
   local namespace_substring=$1
   MATCH=""
 
-  # Read existing context and namespace from session config
+  # Read existing context and namespace from session con`fig
   read_session_config
 
   if [ "$KUBEX_ISOLATED" = "true" ]; then
@@ -365,9 +365,6 @@ handle_delete() {
   local item_number=$1
   shift
 
-  # Read existing context and namespace from session config
-  read_session_config
-
   if [ -z "$item_number" ]; then
     kubecolor delete
     exit 1
@@ -397,9 +394,6 @@ handle_edit() {
   local item_number=$1
   shift
 
-  # Read existing context and namespace from session config
-  read_session_config
-
   if [ -z "$item_number" ]; then
     kubectl edit
     exit 1
@@ -425,9 +419,6 @@ handle_top() {
   local current_context
   local namespace
   local cluster_project
-
-  # Read existing context and namespace from session config
-  read_session_config
 
   if [ -z "$item_number" ]; then
     kubecolor top
@@ -463,9 +454,6 @@ handle_top() {
 handle_switch() {
   local context_name=$1
 
-  # Read existing context and namespace from session config
-  read_session_config
-
   kubectl config use-context "$context_name"
   CONTEXT="$context_name"
   kubectl get namespaces > "/tmp/namespaces_$(kubectl config current-context).txt"
@@ -478,9 +466,6 @@ handle_logs() {
   local current_context
   local namespace
   local cluster_project
-
-  # Read existing context and namespace from session config
-  read_session_config
 
   if [ -z "$item_number" ]; then
     kubecolor logs
@@ -548,9 +533,6 @@ handle_events() {
   item_number=$1
   shift
 
-  # Read existing context and namespace from session config
-  read_session_config
-
   if [ -z "$item_number" ]; then
     kubecolor events
     exit 1
@@ -577,6 +559,8 @@ handle_exec() {
 
   kubectl exec -t -i $(get_item_name $item_number) "$@" -- sh -c "(bash || ash || sh)"
 }
+
+read_session_config
 
 case "$COMMAND" in
   "get")
