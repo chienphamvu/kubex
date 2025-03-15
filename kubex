@@ -37,7 +37,7 @@ grep_and_switch_namespace() {
   # Read existing context and namespace from session config
   read_session_config
 
-  namespaces_file="/tmp/namespaces_$(kubectl config current-context).txt"
+  local namespaces_file="/tmp/namespaces_$(kubectl config current-context).txt"
 
   if [[ $namespace_substring =~ ^[0-9]+$ ]]; then
     namespace_substring=$(get_item_name "$namespace_substring")
@@ -60,7 +60,6 @@ grep_and_switch_namespace() {
     echo "No namespace matches '$namespace_substring'!"
     exit 1
   fi
-  echo "$MATCH"
 }
 
 make_list_numbered() {
@@ -131,6 +130,7 @@ grep_and_switch_cluster() {
   handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
   CONTEXT="$MATCH"
   write_session_config "$CONTEXT" "$NAMESPACE"
+  echo "$CONTEXT"
 }
 
 get_object_details() {
@@ -244,11 +244,11 @@ handle_get() {
   fi
 
   if [ -n "$switch_ns" ]; then
-    NAMESPACE=$(grep_and_switch_namespace "$namespace_substring")
+    grep_and_switch_namespace "$namespace_substring"
   fi
 
   if [ -n "$switch_ctx" ]; then
-    CONTEXT=$(grep_and_switch_cluster "$context_substring")
+    grep_and_switch_cluster "$context_substring"
   fi
 
   if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
