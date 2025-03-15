@@ -205,6 +205,17 @@ handle_get() {
 
   shift
 
+  # Check for existing namespace and context in environment variables
+  if [ -n "$KUBEX_NAMESPACE" ]; then
+    namespace="$KUBEX_NAMESPACE"
+    namespace_arg="--namespace=$namespace"
+  fi
+
+  if [ -n "$KUBEX_CONTEXT" ]; then
+    context="$KUBEX_CONTEXT"
+    context_arg="--context=$context"
+  fi
+
   if [[ "$OBJECT" == "last" ]]; then
     show_last_list "$@"
     exit 0
@@ -226,15 +237,18 @@ handle_get() {
   if [[ "$1" == "on" ]]; then
     switch_ctx=true
     context_substring="$2"
+    export KUBEX_CONTEXT="$context_substring"
     shift 2
   fi
 
   if [ -n "$switch_ns" ]; then
     namespace=$(grep_and_switch_namespace "$namespace_substring")
+    export KUBEX_NAMESPACE="$namespace"
   fi
 
   if [ -n "$switch_ctx" ]; then
     context=$(grep_and_switch_cluster "$context_substring")
+    export KUBEX_CONTEXT="$context"
   fi
 
   if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
@@ -309,6 +323,15 @@ handle_get() {
 handle_describe() {
   local item_number=$1
   shift
+
+  if [ -n "$KUBEX_NAMESPACE" ]; then
+    namespace_arg="--namespace=$KUBEX_NAMESPACE"
+  fi
+
+  if [ -n "$KUBEX_CONTEXT" ]; then
+    context_arg="--context=$KUBEX_CONTEXT"
+  fi
+
   local namespace_arg=$2
   local context_arg=$3
  
@@ -348,6 +371,15 @@ handle_delete() {
 handle_edit() {
   local item_number=$1
   shift
+
+  if [ -n "$KUBEX_NAMESPACE" ]; then
+    namespace_arg="--namespace=$KUBEX_NAMESPACE"
+  fi
+
+  if [ -n "$KUBEX_CONTEXT" ]; then
+    context_arg="--context=$KUBEX_CONTEXT"
+  fi
+
   local namespace_arg=$2
   local context_arg=$3
  
@@ -368,6 +400,15 @@ handle_top() {
   local current_context
   local namespace
   local cluster_project
+
+  if [ -n "$KUBEX_NAMESPACE" ]; then
+    namespace_arg="--namespace=$KUBEX_NAMESPACE"
+  fi
+
+  if [ -n "$KUBEX_CONTEXT" ]; then
+    context_arg="--context=$KUBEX_CONTEXT"
+  fi
+
   local namespace_arg=$2
   local context_arg=$3
  
@@ -409,6 +450,15 @@ handle_logs() {
   local current_context
   local namespace
   local cluster_project
+
+  if [ -n "$KUBEX_NAMESPACE" ]; then
+    namespace_arg="--namespace=$KUBEX_NAMESPACE"
+  fi
+
+  if [ -n "$KUBEX_CONTEXT" ]; then
+    context_arg="--context=$KUBEX_CONTEXT"
+  fi
+
   local namespace_arg=$2
   local context_arg=$3
  
@@ -464,6 +514,15 @@ handle_rr() {
 handle_events() {
   item_number=$1
   shift
+
+  if [ -n "$KUBEX_NAMESPACE" ]; then
+    namespace_arg="--namespace=$KUBEX_NAMESPACE"
+  fi
+
+  if [ -n "$KUBEX_CONTEXT" ]; then
+    context_arg="--context=$KUBEX_CONTEXT"
+  fi
+
   local namespace_arg=$2
   local context_arg=$3
  
