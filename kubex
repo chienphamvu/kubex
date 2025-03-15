@@ -107,7 +107,7 @@ list_items() {
   fi
 
   if [[ "$@" == *"-w"* ]] || [[ "$@" == "--watch" ]]; then
-    kubecolor get "$object" "${args[@]}" "$@"
+    kubecolor get "$object" ${args[@]} "$@"
   else
     echo "$object" > $last_list_file
     kubecolor get "$object" --force-colors ${args[@]} "$@" >> $last_list_file
