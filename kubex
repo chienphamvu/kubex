@@ -1,6 +1,14 @@
 #!/bin/bash
 
-last_list_file="/tmp/last_list.txt"
+# Check if KUBEX_ISOLATED is set to true
+if [ "$KUBEX_ISOLATED" = "true" ]; then
+  # Use the terminal session ID to isolate the namespace list
+  session_id=$(tty | sed 's/\/dev\///')
+  last_list_file="/tmp/last_list_${session_id}.txt"
+else
+  last_list_file="/tmp/last_list.txt"
+fi
+
 COMMAND=$1
 shift
 
@@ -8,10 +16,17 @@ grep_and_switch_namespace() {
   local namespace_substring=$1
   MATCH=""
 
-  namespaces_file="/tmp/namespaces_$(kubectl config current-context).txt"
+  # Check if KUBEX_ISOLATED is set to true
+  if [ "$KUBEX_ISOLATED" = "true" ]; then
+    # Use the terminal session ID to isolate the namespace list
+    session_id=$(tty | sed 's/\/dev\///')
+    namespaces_file="/tmp/namespaces_$(kubectl config current-context)_${session_id}.txt"
+  else
+    namespaces_file="/tmp/namespaces_$(kubectl config current-context).txt"
+  fi
 
-  if [[ $namespace_substring =~ ^[0-9]+$ ]] ; then
-    namespace_substring=$(get_item_name $namespace_substring)
+  if [[ $namespace_substring =~ ^[0-9]+$ ]]; then
+    namespace_substring=$(get_item_name "$namespace_substring")
   fi
 
   if ! ([ -f "$namespaces_file" ]) || ([ -f "$namespaces_file" ] && ! grep -q "$namespace_substring" "$namespaces_file"); then
@@ -20,22 +35,18 @@ grep_and_switch_namespace() {
     kubectl get namespaces > "$namespaces_file"
   fi
 
-  # if grep -q "^${namespace_substring}\s" "$namespaces_file"; then
-  #     # prioritize exact match
-  #     namespace=$(grep "^${namespace_substring}\s" "$namespaces_file" | head -n 1 | awk '{print $1}')
-  # else
-  #   # otherwise grep the first match namespace
-  #   namespace=$(grep "$namespace_substring" "$namespaces_file" | head -n 1 | awk '{print $1}')
-  # fi
-
   handle_matching "$namespace_substring" "$namespaces_file" "namespace"
 
   # switch default namespace
   if [ -n "$MATCH" ]; then
-    kubectl config set-context --current=true --namespace="$MATCH" > /dev/null
-    echo "Switched default namespace to $MATCH"
+    if [ "$KUBEX_ISOLATED" != "true" ]; then
+      kubectl config set-context --current=true --namespace="$MATCH" > /dev/null
+      echo "Switched default namespace to $MATCH"
+    else
+      echo "Switched default namespace to $MATCH (session-only)"
+    fi
   else
-    echo "No namespace matches $namespace_substring!"
+    echo "No namespace matches '$namespace_substring'!"
     exit 1
   fi
 }
