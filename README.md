@@ -16,7 +16,7 @@ alias kgvs='kubex get virtualservice'
 alias kggw='kubex get gateway'
 alias kgcm='kubex get configmap'
 alias kghpa='kubex get hpa'
-alias kgse='kubex get serviceentriy'
+alias kgse='kubex get serviceentry'
 alias kgds='kubex get daemonset'
 alias kgrs='kubex get replicaset'
 alias kgsec='kubex get secrets'
@@ -31,8 +31,7 @@ alias krr='kubex rollout restart'
 alias ks='kubex switch'
 ```
 
-## Command Reference
-
+### Command Reference
 ### Core Commands
 | Command | Description                             | Equivalent               |
 |---------|-----------------------------------------|--------------------------|
