@@ -1,0 +1,8 @@
+#!/bin/bash
+
+item_number=$1
+source "$HOME/tools/kkfunction.sh"
+
+shift
+
+kubectl exec -t -i $(get_item_name $item_number) $@ -- sh -c "(bash || ash || sh)"

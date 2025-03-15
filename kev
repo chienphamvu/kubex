@@ -1,0 +1,16 @@
+#!/bin/bash
+
+item_number=$1
+
+source "$HOME/tools/kkfunction.sh"
+
+if [ -z "$item_number" ]; then
+    kubecolor events
+    exit 1
+fi
+
+object_type=$(get_last_object_type)
+item_name=$(get_item_name "$item_number")
+
+set -x
+kubecolor events --for "$object_type"/"$item_name" $@

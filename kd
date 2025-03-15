@@ -1,0 +1,17 @@
+#!/bin/bash
+
+item_number=$1
+shift
+
+source "$HOME/tools/kkfunction.sh"
+
+if [ -z "$item_number" ]; then
+    kubecolor describe
+    exit 1
+fi
+
+object_type=$(get_last_object_type)
+item_name=$(get_item_name "$item_number")
+
+set -x
+kubecolor describe "$object_type" "$item_name" $@
