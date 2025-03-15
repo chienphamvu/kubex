@@ -100,10 +100,10 @@ list_items() {
 
   shift 3
 
-  local args=()
   if [ "$KUBEX_ISOLATED" = "true" ]; then
-    args+=("$namespace_arg")
-    args+=("$context_arg")
+    local args=("$namespace_arg" "$context_arg")
+  else
+    local args=()
   fi
 
   if [[ "$@" == *"-w"* ]] || [[ "$@" == "--watch" ]]; then
