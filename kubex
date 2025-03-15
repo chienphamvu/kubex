@@ -211,11 +211,16 @@ handle_get() {
     shift 2
   fi
 
+  local namespace_arg=""
+  local context_arg=""
+ 
   if [[ "$1" == "on" ]]; then
-    grep_and_switch_cluster "$2"
+    context_name="$2"
     shift 2
+  fi
+ 
   if [ -n "$switch_ns" ]; then
-    grep_and_switch_namespace "$namespace_substring"
+    namespace_substring=$(grep_and_switch_namespace "$namespace_substring")
   fi
 
   if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
@@ -270,8 +275,14 @@ handle_get() {
     ;;
     "cr") OBJECT="clusterroles"
     ;;
-  esac
-
+  if [ -n "$namespace_substring" ]; then
+    namespace_arg="--namespace=$namespace_substring"
+  fi
+ 
+  if [ -n "$context_name" ]; then
+    context_arg="--context=$context_name"
+  fi
+ 
   if [ -n "$grep_string" ]; then
     list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@ | grep "$grep_string"
   else
@@ -282,16 +293,18 @@ handle_get() {
 handle_describe() {
   local item_number=$1
   shift
-
+  local namespace_arg=$2
+  local context_arg=$3
+ 
   if [ -z "$item_number" ]; then
       kubecolor describe
       exit 1
   fi
-
+ 
   get_object_details "$item_number"
-
+ 
   set -x
-  kubecolor describe "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+  kubecolor describe "$OBJECT_TYPE" "$ITEM_NAME" $namespace_arg $context_arg "$@"
 }
 
 handle_delete() {
@@ -318,16 +331,19 @@ handle_delete() {
 
 handle_edit() {
   local item_number=$1
-
+  shift
+  local namespace_arg=$2
+  local context_arg=$3
+ 
   if [ -z "$item_number" ]; then
       kubectl edit
       exit 1
   fi
-
+ 
   get_object_details "$item_number"
-
+ 
   set -x
-  kubectl edit "$OBJECT_TYPE" "$ITEM_NAME"
+  kubectl edit "$OBJECT_TYPE" "$ITEM_NAME" $namespace_arg $context_arg
 }
 
 handle_top() {
@@ -336,30 +352,32 @@ handle_top() {
   local current_context
   local namespace
   local cluster_project
-
+  local namespace_arg=$2
+  local context_arg=$3
+ 
   source "$HOME/tools/kkfunction.sh"
-
+ 
   if [ -z "$item_number" ]; then
       kubecolor top
       exit 1
   fi
-
+ 
   get_object_details "$item_number"
-
+ 
   if [[ "$@" == *"--gcp"* ]]; then
     current_context=$(kubectl config get-contexts | grep "*")
     namespace=$(echo "$current_context" | awk '{print $5}')
     cluster_project=$(echo "$current_context" | awk '{print $3}' | awk -F'_' '{print $2}')
-
+ 
     url=$(construct_gcp_url "$cluster_project" "$namespace" "$ITEM_NAME" "metrics")
-
+ 
     open_gcp_console_url "$url"
-
+ 
     exit 0
   fi
-
+ 
   set -x
-  kubecolor top "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+  kubecolor top "$OBJECT_TYPE" "$ITEM_NAME" $namespace_arg $context_arg "$@"
 }
 
 handle_switch() {
@@ -375,33 +393,35 @@ handle_logs() {
   local current_context
   local namespace
   local cluster_project
-
+  local namespace_arg=$2
+  local context_arg=$3
+ 
   get_object_details "$item_number"
-
+ 
   if [[ "$@" == *"--gcp"* ]]; then
     current_context=$(kubectl config get-contexts | grep "*")
     namespace=$(echo "$current_context" | awk '{print $5}')
     cluster_project=$(echo "$current_context" | awk '{print $3}' | awk -F'_' '{print $2}')
-
+ 
     url=$(construct_gcp_url "$cluster_project" "$namespace" "$ITEM_NAME" "logs")
-
+ 
     open_gcp_console_url "$url"
-
+ 
     exit 0
   fi
-
+ 
   local tail_option=""
   if [[ "$@" == *"-f"* ]] || [[ "$@" == "--follow=true" ]]; then
     # By default, get only the last 50 line of logs if not streaming
     tail_option="--tail=50"
-
+ 
     if [[ "$@" == *"--tail"* ]]; then
       tail_option=""
     fi
   fi
-
+ 
   set -x
-  kubectl logs "$OBJECT_TYPE"/"$ITEM_NAME" $tail_option "$@"
+  kubectl logs "$OBJECT_TYPE"/"$ITEM_NAME" $tail_option $namespace_arg $context_arg "$@"
 }
 
 handle_rr() {
@@ -427,17 +447,20 @@ handle_rr() {
 
 handle_events() {
   item_number=$1
-
+  shift
+  local namespace_arg=$2
+  local context_arg=$3
+ 
   if [ -z "$item_number" ]; then
       kubecolor events
       exit 1
   fi
-
+ 
   local object_type=$(get_last_object_type)
   local item_name=$(get_item_name "$item_number")
-
+ 
   set -x
-  kubecolor events --for "$object_type"/"$item_name" "$@"
+  kubecolor events --for "$object_type"/"$item_name" $namespace_arg $context_arg "$@"
 }
 
 handle_exec() {
