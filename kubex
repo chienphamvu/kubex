@@ -100,6 +100,28 @@ grep_and_switch_cluster() {
   kubectl config use-context "$MATCH"
 }
 
+get_object_details() {
+  local item_number=$1
+  OBJECT_TYPE=$(get_last_object_type)
+  ITEM_NAME=$(get_item_name "$item_number")
+}
+
+construct_gcp_url() {
+  local cluster_project="$1"
+  local namespace="$2"
+  local item_name="$3"
+  local log_type="$4"
+  local url=""
+
+  if [[ "$log_type" == "logs" ]]; then
+    url="https://console.cloud.google.com/logs/query;query=logName%3D%2528%22projects%2F${cluster_project}%2Flogs%2Fstderr%22%20OR%20%22projects%2F${cluster_project}%2Flogs%2Fstdout%22%2529%0Aresource.labels.namespace_name%3D%22${namespace}%22%0Aresource.labels.pod_name%3D%22${item_name}%22%0Aresource.labels.container_name!%3D%22istio-proxy%22;duration=PT30M?referrer=search&project=${cluster_project}"
+  elif [[ "$log_type" == "metrics" ]]; then
+    url="https://console.cloud.google.com/monitoring/metrics-explorer;duration=PT1H?referrer=search&project=${cluster_project}&pageState=%7B%22xyChart%22:%7B%22constantLines%22:%5B%5D,%22dataSets%22:%5B%7B%22plotType%22:%22LINE%22,%22targetAxis%22:%22Y1%22,%22timeSeriesFilter%22:%7B%22aggregations%22:%5B%7B%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%5D,%22apiSource%22:%22DEFAULT_CLOUD%22,%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22filter%22:%22metric.type%3D%5C%22kubernetes.io%2Fcontainer%2Fmemory%2Fused_bytes%5C%22%20resource.type%3D%5C%22k8s_container%5C%22%20metric.label.%5C%22memory_type%5C%22%3D%5C%22non-evictable%5C%22%20resource.label.%5C%22namespace_name%5C%22%3D%5C%22${namespace}%5C%22%20resource.label.%5C%22container_name%5C%22!%3D%5C%22istio-proxy%5C%22%20resource.label.%5C%22pod_name%5C%22%3D%5C%22${item_name}%5C%22%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22minAlignmentPeriod%22:%2260s%22,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%7D,%7B%22plotType%22:%22LINE%22,%22targetAxis%22:%22Y1%22,%22timeSeriesFilter%22:%7B%22aggregations%22:%5B%7B%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%5D,%22apiSource%22:%22DEFAULT_CLOUD%22,%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22filter%22:%22metric.type%3D%5C%22kubernetes.io%2Fcontainer%2Fmemory%2Flimit_bytes%5C%22%20resource.type%3D%5C%22k8s_container%5C%22%20resource.label.%5C%22namespace_name%5C%22%3D%5C%22${namespace}%5C%22%20resource.label.%5C%22container_name%5C%22!%3D%5C%22istio-proxy%5C%22%20resource.label.%5C%22pod_name%5C%22%3D%5C%22${item_name}%5C%22%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22minAlignmentPeriod%22:%2260s%22,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%7D,%7B%22plotType%22:%22LINE%22,%22targetAxis%22:%22Y1%22,%22timeSeriesFilter%22:%7B%22aggregations%22:%5B%7B%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%5D,%22apiSource%22:%22DEFAULT_CLOUD%22,%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22filter%22:%22metric.type%3D%5C%22kubernetes.io%2Fcontainer%2Fmemory%2Frequest_bytes%5C%22%20resource.type%3D%5C%22k8s_container%5C%22%20resource.label.%5C%22namespace_name%5C%22%3D%5C%22${namespace}%5C%22%20resource.label.%5C%22container_name%5C%22!%3D%5C%22istio-proxy%5C%22%20resource.label.%5C%22pod_name%5C%22%3D%5C%22${item_name}%5C%22%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22minAlignmentPeriod%22:%2260s%22,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%7D%5D,%22options%22:%7B%22mode%22:%22COLOR%22%7D,%22y1Axis%22:%7B%22label%22:%22%22,%22scale%22:%22LINEAR%22%7D%7D%7D&inv=1&invt=AbqsyA"
+  fi
+
+  echo "$url"
+}
+
 handle_matching() {
   local grep_string="$1"
   local file="$2"
@@ -167,6 +189,7 @@ handle_get() {
     exit 0
   fi
 
+  # Consolidate 'in' flag handling
   if [[ "$1" == "in" ]]; then
     if [[ "$2" == "all" ]]; then
       ALL_NAMESPACES_OPTIONS="--all-namespaces"
@@ -180,18 +203,6 @@ handle_get() {
   if [[ "$1" == "on" ]]; then
     grep_and_switch_cluster "$2"
     shift 2
-  fi
-
-  if [[ "$1" == "in" ]]; then
-    if [[ "$2" == "all" ]]; then
-      ALL_NAMESPACES_OPTIONS="--all-namespaces"
-    else
-      switch_ns=true
-      namespace_substring="$2"
-    fi
-    shift 2
-  fi
-
   if [ -n "$switch_ns" ]; then
     grep_and_switch_namespace "$namespace_substring"
   fi
@@ -266,11 +277,10 @@ handle_describe() {
       exit 1
   fi
 
-  local object_type=$(get_last_object_type)
-  local item_name=$(get_item_name "$item_number")
+  get_object_details "$item_number"
 
   set -x
-  kubecolor describe "$object_type" "$item_name" "$@"
+  kubecolor describe "$OBJECT_TYPE" "$ITEM_NAME" "$@"
 }
 
 handle_delete() {
@@ -282,15 +292,14 @@ handle_delete() {
       exit 1
   fi
 
-  local object_type=$(get_last_object_type)
-  local item_name=$(get_item_name "$item_number")
+  get_object_details "$item_number"
 
-  read -p "Delete $object_type $item_name (y/N)? " -r REPLY
+  read -p "Delete $OBJECT_TYPE $ITEM_NAME (y/N)? " -r REPLY
   echo
 
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     set -x
-    kubecolor delete "$object_type" "$item_name" "$@"
+    kubecolor delete "$OBJECT_TYPE" "$ITEM_NAME" "$@"
   else
     echo "Keep it then!"
   fi
@@ -304,21 +313,10 @@ handle_edit() {
       exit 1
   fi
 
-  local object_type=$(get_last_object_type)
-  local item_name=$(get_item_name "$item_number")
+  get_object_details "$item_number"
 
   set -x
-  kubectl edit "$object_type" "$item_name"
-}
-
-open_gcp_console_url() {
-  local url="$1"
-
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$url"
-  else
-    xdg-open "$url"
-  fi
+  kubectl edit "$OBJECT_TYPE" "$ITEM_NAME"
 }
 
 handle_top() {
@@ -335,15 +333,14 @@ handle_top() {
       exit 1
   fi
 
-  local object_type=$(get_last_object_type)
-  local item_name=$(get_item_name "$item_number")
+  get_object_details "$item_number"
 
   if [[ "$@" == *"--gcp"* ]]; then
     current_context=$(kubectl config get-contexts | grep "*")
     namespace=$(echo "$current_context" | awk '{print $5}')
     cluster_project=$(echo "$current_context" | awk '{print $3}' | awk -F'_' '{print $2}')
 
-    url="https://console.cloud.google.com/monitoring/metrics-explorer;duration=PT1H?referrer=search&project=${cluster_project}&pageState=%7B%22xyChart%22:%7B%22constantLines%22:%5B%5D,%22dataSets%22:%5B%7B%22plotType%22:%22LINE%22,%22targetAxis%22:%22Y1%22,%22timeSeriesFilter%22:%7B%22aggregations%22:%5B%7B%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%5D,%22apiSource%22:%22DEFAULT_CLOUD%22,%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22filter%22:%22metric.type%3D%5C%22kubernetes.io%2Fcontainer%2Fmemory%2Fused_bytes%5C%22%20resource.type%3D%5C%22k8s_container%5C%22%20metric.label.%5C%22memory_type%5C%22%3D%5C%22non-evictable%5C%22%20resource.label.%5C%22namespace_name%5C%22%3D%5C%22${namespace}%5C%22%20resource.label.%5C%22container_name%5C%22!%3D%5C%22istio-proxy%5C%22%20resource.label.%5C%22pod_name%5C%22%3D%5C%22${item_name}%5C%22%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22minAlignmentPeriod%22:%2260s%22,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%7D,%7B%22plotType%22:%22LINE%22,%22targetAxis%22:%22Y1%22,%22timeSeriesFilter%22:%7B%22aggregations%22:%5B%7B%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%5D,%22apiSource%22:%22DEFAULT_CLOUD%22,%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22filter%22:%22metric.type%3D%5C%22kubernetes.io%2Fcontainer%2Fmemory%2Flimit_bytes%5C%22%20resource.type%3D%5C%22k8s_container%5C%22%20resource.label.%5C%22namespace_name%5C%22%3D%5C%22${namespace}%5C%22%20resource.label.%5C%22container_name%5C%22!%3D%5C%22istio-proxy%5C%22%20resource.label.%5C%22pod_name%5C%22%3D%5C%22${item_name}%5C%22%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22minAlignmentPeriod%22:%2260s%22,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%7D,%7B%22plotType%22:%22LINE%22,%22targetAxis%22:%22Y1%22,%22timeSeriesFilter%22:%7B%22aggregations%22:%5B%7B%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%5D,%22apiSource%22:%22DEFAULT_CLOUD%22,%22crossSeriesReducer%22:%22REDUCE_MEAN%22,%22filter%22:%22metric.type%3D%5C%22kubernetes.io%2Fcontainer%2Fmemory%2Frequest_bytes%5C%22%20resource.type%3D%5C%22k8s_container%5C%22%20resource.label.%5C%22namespace_name%5C%22%3D%5C%22${namespace}%5C%22%20resource.label.%5C%22container_name%5C%22!%3D%5C%22istio-proxy%5C%22%20resource.label.%5C%22pod_name%5C%22%3D%5C%22${item_name}%5C%22%22,%22groupByFields%22:%5B%22resource.label.%5C%22container_name%5C%22%22%5D,%22minAlignmentPeriod%22:%2260s%22,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%7D%5D,%22options%22:%7B%22mode%22:%22COLOR%22%7D,%22y1Axis%22:%7B%22label%22:%22%22,%22scale%22:%22LINEAR%22%7D%7D%7D&inv=1&invt=AbqsyA"
+    url=$(construct_gcp_url "$cluster_project" "$namespace" "$ITEM_NAME" "metrics")
 
     open_gcp_console_url "$url"
 
@@ -351,7 +348,7 @@ handle_top() {
   fi
 
   set -x
-  kubecolor top "$object_type" "$item_name" $@
+  kubecolor top "$OBJECT_TYPE" "$ITEM_NAME" "$@"
 }
 
 handle_switch() {
@@ -368,15 +365,14 @@ handle_logs() {
   local namespace
   local cluster_project
 
-  local object_type=$(get_last_object_type)
-  local item_name=$(get_item_name "$item_number")
+  get_object_details "$item_number"
 
   if [[ "$@" == *"--gcp"* ]]; then
     current_context=$(kubectl config get-contexts | grep "*")
     namespace=$(echo "$current_context" | awk '{print $5}')
     cluster_project=$(echo "$current_context" | awk '{print $3}' | awk -F'_' '{print $2}')
 
-    url="https://console.cloud.google.com/logs/query;query=logName%3D%2528%22projects%2F${cluster_project}%2Flogs%2Fstderr%22%20OR%20%22projects%2F${cluster_project}%2Flogs%2Fstdout%22%2529%0Aresource.labels.namespace_name%3D%22${namespace}%22%0Aresource.labels.pod_name%3D%22${item_name}%22%0Aresource.labels.container_name!%3D%22istio-proxy%22;duration=PT30M?referrer=search&project=${cluster_project}"
+    url=$(construct_gcp_url "$cluster_project" "$namespace" "$ITEM_NAME" "logs")
 
     open_gcp_console_url "$url"
 
@@ -394,7 +390,7 @@ handle_logs() {
   fi
 
   set -x
-  kubectl logs "$object_type"/"$item_name" $tail_option "$@"
+  kubectl logs "$OBJECT_TYPE"/"$ITEM_NAME" $tail_option "$@"
 }
 
 handle_rr() {
