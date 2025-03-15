@@ -130,7 +130,6 @@ grep_and_switch_cluster() {
   handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
   CONTEXT="$MATCH"
   write_session_config "$CONTEXT" "$NAMESPACE"
-  echo "$CONTEXT"
 }
 
 get_object_details() {
