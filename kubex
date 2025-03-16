@@ -85,12 +85,12 @@ grep_and_switch_namespace() {
   # switch default namespace
   if [ -n "$MATCH" ]; then
     NAMESPACE="$MATCH"
-    if [ "$KUBEX_ISOLATED" = "false" ]; then
-      kubectl config set-context --current --namespace="$MATCH" > /dev/null
-      echo "Switched default namespace to $MATCH"
-    else
+    if [ "$KUBEX_ISOLATED" = "true" ]; then
       write_session_config "$CONTEXT" "$NAMESPACE"
       echo "Switched default namespace to $MATCH (session-only)"
+    else
+      kubectl config set-context --current --namespace="$MATCH" > /dev/null
+      echo "Switched default namespace to $MATCH"
     fi
   else
     echo "No namespace matches '$namespace_substring'!"
@@ -147,7 +147,6 @@ grep_and_switch_cluster() {
     echo "Switched to cluster ${CONTEXT} (session-only)"
   else
     kubectl config use-context "$CONTEXT"
-    echo "Switched to cluster ${CONTEXT}"
   fi
 }
 
@@ -204,7 +203,7 @@ handle_matching() {
     # remove number from the file
     matching_lines=$(echo "$matching_lines" | awk -F: '{print $1 ". " $2}' | awk '{print $2}')
     echo
-    echo "$matching_lines" | nl -w4 -S"  "
+    echo "$matching_lines" | nl -w4 -s"  "
     echo
 
     read -p "Enter the line number to select: " selected_line_number
@@ -216,14 +215,27 @@ handle_matching() {
   fi
 }
 
+display_context_details() {
+  local object_type=$1
+  local scope="global"
+
+  if [ "$KUBEX_ISOLATED" = "true" ]; then
+    scope="terminal"
+  fi
+
+  echo
+  echo "    | CLUSTER    ${CONTEXT}"
+  echo "    | NAMESPACE  ${NAMESPACE}"
+  echo "    | RESOURCE   ${object_type}"
+  echo "    | SCOPE      ${scope}"
+  echo
+}
+
 show_last_list() {
   local grep_string="$1"
 
   if [ -z "$grep_string" ]; then
-    echo
-    echo "    | CLUSTER: $CONTEXT"
-    echo "    | NAMESPACE: $NAMESPACE"
-    echo
+    display_context_details "$(head -n 1 ${LAST_LIST_FILE})"
   fi
 
   if [ -n $1 ]; then
@@ -332,10 +344,7 @@ handle_get() {
     ;;
   esac
 
-  echo
-  echo "    | CLUSTER: $CONTEXT"
-  echo "    | NAMESPACE: $NAMESPACE"
-  echo
+  display_context_details "$object_type"
 
   if [ -n "$grep_string" ]; then
     list_items "$object_type" "$all_namespaces_opt" $@ | grep "$grep_string" | less -KEFS
