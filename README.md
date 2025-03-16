@@ -1,6 +1,6 @@
 # KubeX - Kubectl Extreme
 
-KubeX is a command-line tool designed to enhance your kubectl experience by providing simplified commands and helpful shortcuts.
+KubeX is a command-line tool that enhances your kubectl experience by providing simplified commands and helpful shortcuts.
 
 ## Dependencies
 
@@ -75,7 +75,7 @@ KubeX is a command-line tool designed to enhance your kubectl experience by prov
 
 ## Usage
 
-KubeX provides simplified commands for common Kubernetes operations. It leverages `kubectl` to provide a more efficient and user-friendly experience. `kubecolor` is highly recommended for colored output.
+KubeX provides simplified commands for common Kubernetes operations, leveraging `kubectl` for a more efficient and user-friendly experience. `kubecolor` is highly recommended for colored output.
 
 *   **Listing resources:** `kubex get <resource> [options]`
     * `<resource>` can be any valid kubectl resource (`pod`, `deployment`, `service`, `serviceaccount`, etc.)
@@ -98,16 +98,16 @@ KubeX provides simplified commands for common Kubernetes operations. It leverage
 
 ### Get Resources
 
-This command does a simple thing: it show the normal kubectl output but with numbers.
-Besides that, it also supports `in <namespace>` and `on <context>` options to provide easy filtering and context switching. KubeX uses fuzzy matching, so you don't need to provide the full namespace or context name; KubeX will find the matches and prompt you to select.
+This command displays the normal kubectl output but with numbered lines.
+It also supports the `in <namespace>` and `on <context>` options for easy filtering and context switching. KubeX uses fuzzy matching, so you don't need to provide the full namespace or context name; KubeX will find the matches and prompt you to select from the available options.
 
 ```bash
 kubex get <resource> [in <namespace>] [on <context>] [<string>] [flags]
 ```
-- `<resource>` can be any valid kubectl resource (`pod`, `deployment`, `service`, `serviceaccount`, etc.) or `last` which is a special resource for kubeX, it quickly shows the last list from cache.
-- `<namespace>` and `<context>` doesn't need to be exact match
-- `<string>` is the filter string to filter output from the command
-- `[flags]` can be any valid kubectl flags
+- `<resource>` can be any valid kubectl resource (`pod`, `deployment`, `service`, `serviceaccount`, etc.) or `last`, which is a special resource for KubeX that quickly shows the last list from the cache.
+- `<namespace>` and `<context>` do not need to be an exact match.
+- `<string>` is the filter string to further refine the output.
+- `[flags]` can be any valid kubectl flags.
 
 ## Examples
 
@@ -126,7 +126,9 @@ kubex get pods
 ```
 
 ### Describe a Pod
-Describe the #1 pod from the previous "get pods" result
+
+Describes the pod labeled as #1 from the previous "get pods" result.
+
 ```bash
 kubex describe 1
 ```
@@ -138,7 +140,9 @@ Namespace:    default
 ```
 
 ### View Pod Logs
-View logs of the #1 pod from the previous "get pods" result
+
+View logs of the pod labeled as #1 from the previous "get pods" result.
+
 ```bash
 kubex logs 1
 ```
@@ -148,7 +152,9 @@ kubex logs 1
 ```
 
 ### Execute Command in Container
-Execute into the #1 pod from the previous "get pods" result
+
+Executes a command within the pod labeled as #1 from the previous "get pods" result.
+
 ```bash
 kubex exec 1
 ```
