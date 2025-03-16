@@ -48,6 +48,7 @@ KubeX is a command-line tool designed to enhance your kubectl experience by prov
 
     # Add these aliases to your shell config (zshrc/bashrc):
     alias kcgc='kubectl config get-contexts'
+    alias kg='kubex get'
     alias kgp='kubex get pods'
     alias kgd='kubex get deployments'
     alias kgns='kubex get namespace'
@@ -63,22 +64,21 @@ KubeX is a command-line tool designed to enhance your kubectl experience by prov
     alias kgsec='kubex get secrets'
     alias kgn='kubex get nodes'
     alias kd='kubex describe'
-    alias kdel='kubex delete'
     alias kl='kubex logs'
     alias keti='kubex exec'
     alias kev='kubex events'
     alias ke='kubex edit'
+    alias kdel='kubex delete'
     alias krr='kubex rollout restart'
     alias ks='kubex switch'
     ```
 
 ## Usage
 
-KubeX provides simplified commands for common Kubernetes operations. It leverages `kubectl` to provide a more efficient and user-friendly experience. `kubecolor` is recommended for colored output.
+KubeX provides simplified commands for common Kubernetes operations. It leverages `kubectl` to provide a more efficient and user-friendly experience. `kubecolor` is highly recommended for colored output.
 
-KubeX simplifies common `kubectl` commands. Here are some examples:
-
-*   **Listing resources:** `kubex get <resource_type> [options]`
+*   **Listing resources:** `kubex get <resource> [options]`
+    * `<resource>` can be any valid kubectl resource (`pod`, `deployment`, `service`, `serviceaccount`, etc.)
     *   Example: `kubex get pods` (or `kgp`) - Lists all pods in the current namespace.
     *   Example: `kubex get deployments in kube-system` (or `kgd in kube-system`) - Lists all deployments in the `kube-system` namespace.
     *   Example: `kubex get services -o wide` (or `kgsvc -o wide`) - Lists all services with detailed output.
@@ -98,18 +98,16 @@ KubeX simplifies common `kubectl` commands. Here are some examples:
 
 ### Get Resources
 
-These commands simplify `kubectl get` operations. The `in <namespace>` and `on <context>` keywords provide easy filtering and context switching. Kubex uses fuzzy matching, so you don't need to provide the full namespace or context name; Kubex will find the matches and prompt you to select.
+This command does a simple thing: it show the normal kubectl output but with numbers.
+Besides that, it also supports `in <namespace>` and `on <context>` options to provide easy filtering and context switching. KubeX uses fuzzy matching, so you don't need to provide the full namespace or context name; KubeX will find the matches and prompt you to select.
 
 ```bash
-<command> [flags]
+kubex get <resource> [in <namespace>] [on <context>] [<string>] [flags]
 ```
-
-**Examples:**
-
-*   **Listing pods in a specific namespace:** `kubex get pods in <namespace>` (or `kgp in <namespace>`)
-    *   Example: `kubex get pods in dev` - Lists pods in a namespace matching "dev" (e.g., "dev-ns"). Kubex will prompt you to select the namespace if multiple matches are found.
-*   **Listing deployments in a specific namespace and context:** `kubex get deployments in <namespace> on <context>` (or `kgd in <namespace> on <context>`)
-    *   Example: `kubex get deployments in prod on gke` - Lists deployments in a namespace matching "prod" on a context matching "gke". Kubex will prompt you to select the namespace and context if multiple matches are found.
+- `<resource>` can be any valid kubectl resource (`pod`, `deployment`, `service`, `serviceaccount`, etc.) or `last` which is a special resource for kubeX, it quickly shows the last list from cache.
+- `<namespace>` and `<context>` doesn't need to be exact match
+- `<string>` is the filter string to filter output from the command
+- `[flags]` can be any valid kubectl flags
 
 ## Examples
 
@@ -117,19 +115,18 @@ These commands simplify `kubectl get` operations. The `in <namespace>` and `on <
 
 ```bash
 kubex get pods
-kgp
 ```
 
 ```
-    1  NAME                                         READY   STATUS    RESTARTS   AGE
-    2  api-gateway-5c6d8c6b97-m7q6z                 1/1     Running   0          2d
-    3  auth-service-7b9b8f5b9c-k9z4x                1/1     Running   0          2d
-    4  catalog-service-6b8b9c7c6f-r2d5h             1/1     Running   0          2d
-    5  order-service-84d659c78b-p8wlx               1/1     Running   0          2d
+       NAME                                         READY   STATUS    RESTARTS   AGE
+    1  api-gateway-5c6d8c6b97-m7q6z                 1/1     Running   0          2d
+    2  auth-service-7b9b8f5b9c-k9z4x                1/1     Running   0          2d
+    3  catalog-service-6b8b9c7c6f-r2d5h             1/1     Running   0          2d
+    4  order-service-84d659c78b-p8wlx               1/1     Running   0          2d
 ```
 
 ### Describe a Pod
-
+Describe the #1 pod from the previous "get pods" result
 ```bash
 kubex describe 1
 ```
@@ -141,7 +138,7 @@ Namespace:    default
 ```
 
 ### View Pod Logs
-
+View logs of the #1 pod from the previous "get pods" result
 ```bash
 kubex logs 1
 ```
@@ -151,23 +148,15 @@ kubex logs 1
 ```
 
 ### Execute Command in Container
-
+Execute into the #1 pod from the previous "get pods" result
 ```bash
 kubex exec 1
-```
-
-```
-/ #
 ```
 
 ### View Resource Events
 
 ```bash
 kubex events 1
-```
-
-```
-... (events related to the resource)
 ```
 
 ## Configuration
