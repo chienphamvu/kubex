@@ -4,9 +4,9 @@
 if [ "$KUBEX_ISOLATED" = "true" ]; then
   # Use the terminal session ID to isolate the namespace list
   session_id=$(tty | sed 's/\/dev\///')
-  last_list_file="/tmp/last_list_${session_id}.txt"
+  LAST_LIST_FILE="/tmp/last_list_${session_id}.txt"
 else
-  last_list_file="/tmp/last_list.txt"
+  LAST_LIST_FILE="/tmp/last_list.txt"
 fi
 
 # Create a temporary file to store context and namespace for the session
@@ -73,7 +73,7 @@ grep_and_switch_namespace() {
 get_item_name() {
   local line_number="$1"
 
-  item_name=$(awk -v line_num="$line_number" '$1 == line_num {print $2}' "$last_list_file" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
+  item_name=$(awk -v line_num="$line_number" '$1 == line_num {print $2}' "$LAST_LIST_FILE" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
 
   if [[ -n "$item_name" ]]; then
     echo "$item_name"
@@ -96,15 +96,11 @@ list_items() {
   if [[ "$@" == *"-w"* ]] || [[ "$@" == "--watch" ]]; then
     kubecolor get "$object" ${args[@]} "$@"
   else
-    echo "$object" > $last_list_file
-    kubecolor get "$object" --force-colors ${args[@]} $@ | awk 'NR <= 1 {printf "%6s  %s\n", "", $0; next} {print | "nl"}' >> $last_list_file
+    echo "$object" > $LAST_LIST_FILE
+    kubecolor get "$object" --force-colors ${args[@]} $@ | awk 'NR <= 1 {printf "%6s  %s\n", "", $0; next} {print | "nl"}' >> $LAST_LIST_FILE
     # print but skip the first line which stores the object type
-    tail -n +2 $last_list_file
+    tail -n +2 $LAST_LIST_FILE
   fi
-}
-
-get_last_object_type() {
-  head -n 1 "$last_list_file"
 }
 
 grep_and_switch_cluster() {
@@ -132,7 +128,8 @@ grep_and_switch_cluster() {
 
 get_object_details() {
   local item_number=$1
-  OBJECT_TYPE=$(get_last_object_type)
+
+  OBJECT_TYPE=$(head -n 1 "$LAST_LIST_FILE")
   ITEM_NAME=$(get_item_name "$item_number")
 }
 
@@ -198,9 +195,9 @@ show_last_list() {
   local grep_string="$1"
 
   if [ -n $1 ]; then
-    tail -n +2 "$last_list_file" | awk 'NF' | grep "$1" | less -KEFS
+    tail -n +2 "$LAST_LIST_FILE" | awk 'NF' | grep "$1" | less -KEFS
   else
-    tail -n +2 "$last_list_file" | awk 'NF' | less -KEFS
+    tail -n +2 "$LAST_LIST_FILE" | awk 'NF' | less -KEFS
   fi
 }
 
@@ -488,10 +485,9 @@ handle_rr() {
   fi
 
   if [[ $item_number =~ ^[0-9]+$ ]]; then
-    object_type=$(get_last_object_type)
-    item_name=$(get_item_name "$item_number")
+    get_object_details
     set -x
-    kubecolor rollout restart "$object_type"/"$item_name"
+    kubecolor rollout restart "$OBJECT_TYPE"/"$ITEM_NAME"
   else
     set -x
     kubecolor rollout restart "$item_number"
@@ -507,8 +503,7 @@ handle_events() {
     exit 1
   fi
 
-  local object_type=$(get_last_object_type)
-  local item_name=$(get_item_name "$item_number")
+  get_object_details
 
   local args=()
   if [ -n "$CONTEXT" ]; then
@@ -519,7 +514,7 @@ handle_events() {
   fi
 
   set -x
-  kubecolor events "${args[@]}" --for "$object_type"/"$item_name" "$@"
+  kubecolor events "${args[@]}" --for "$OBJECT_TYPE"/"$ITEM_NAME" "$@"
 }
 
 handle_exec() {
