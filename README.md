@@ -1,11 +1,11 @@
 # KubeX - Kubectl Extreme
 
-KubeX is a command-line tool that enhances your kubectl experience by providing simplified commands and helpful shortcuts.
+KubeX is a `kubectl` wrapper that greatly enhances your `kubectl` experience by providing simplified commands and helpful shortcuts. It uses `kubectl` to carry out the actual Kubernetes commands.
 
 ## Dependencies
 
 - **kubectl**: The Kubernetes command-line tool.
-- **kubecolor**: (Optional) For colored kubectl output. Highly recommended.
+- **kubecolor**: (Optional) Provides colored kubectl output. Highly recommended.
 
 ## Installation
 
@@ -27,7 +27,7 @@ KubeX is a command-line tool that enhances your kubectl experience by providing 
 
 3.  **Set up your `PATH` (if necessary):**
 
-    If you copied `kubex` to a directory that's not already in your `PATH`, you'll need to add it.  Edit your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.) and add the following line:
+    If you copied `kubex` to a directory that's not already in your `PATH`, you'll need to add it. Edit your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.) and add the following line:
 
     ```bash
     export PATH="$PATH:/usr/local/bin"  # Or the directory where you put kubex
@@ -98,15 +98,15 @@ KubeX provides simplified commands for common Kubernetes operations, leveraging 
 
 ### Get Resources
 
-This command displays the normal kubectl output but with numbered lines.
+This command does one simple but most important thing: displays the normal kubectl output with numbered lines. This greatly simplifies the subsequent commands you're going to execute on these resources (`describe`, `edit`, `logs`, etc.) since you won't have to type their names or resource type again.
 It also supports the `in <namespace>` and `on <context>` options for easy filtering and context switching. KubeX uses fuzzy matching, so you don't need to provide the full namespace or context name; KubeX will find the matches and prompt you to select from the available options.
 
 ```bash
 kubex get <resource> [in <namespace>] [on <context>] [<string>] [flags]
 ```
 - `<resource>` can be any valid kubectl resource (`pod`, `deployment`, `service`, `serviceaccount`, etc.) or `last`, which is a special resource for KubeX that quickly shows the last list from the cache.
-- `<namespace>` and `<context>` do not need to be an exact match.
-- `<string>` is the filter string to further refine the output.
+- `<namespace>` and `<context>` do not need to be an exact match. All subsequent commands will use this namespace and context by default.
+- `<string>` is the filter string to further refine the output (using `grep` essentially).
 - `[flags]` can be any valid kubectl flags.
 
 ## Examples
@@ -115,6 +115,10 @@ kubex get <resource> [in <namespace>] [on <context>] [<string>] [flags]
 
 ```bash
 kubex get pods
+```
+or with alias
+```bash
+kgp
 ```
 
 ```
@@ -132,6 +136,10 @@ Describes the pod labeled as #1 from the previous "get pods" result.
 ```bash
 kubex describe 1
 ```
+or with alias
+```bash
+kd 1
+```
 
 ```
 Name:         api-gateway-5c6d8c6b97-m7q6z
@@ -144,7 +152,11 @@ Namespace:    default
 View logs of the pod labeled as #1 from the previous "get pods" result.
 
 ```bash
-kubex logs 1
+kubex logs 1 -f
+```
+or with alias
+```bash
+kl 1 -f
 ```
 
 ```
@@ -158,11 +170,21 @@ Executes a command within the pod labeled as #1 from the previous "get pods" res
 ```bash
 kubex exec 1
 ```
+or with alias
+```bash
+keti 1
+```
 
 ### View Resource Events
 
+View events of the pod labeled as #1 from the previous "get pods" result.
+
 ```bash
 kubex events 1
+```
+or with alias
+```bash
+kev 1
 ```
 
 ## Configuration
@@ -183,3 +205,10 @@ You can set these environment variables in your shell configuration file (e.g., 
     kubex top 1 --gcp  # Opens the pod's metrics in GCP Console
     kubex logs 1 --gcp # Opens the pod's logs in GCP Console
     ```
+### Tips
+1. kubectl has support for `KUBE_EDITOR` to point to your preferred editor for the `edit` command instead of relying on the standard `vi`.
+If you're using VS Code on macOS, you can set it as your default editor by adding this line to your `~/.bashrc` or `~/.zshrc`
+```bash
+export KUBE_EDITOR="/Applications/'Visual Studio Code.app'/Contents/Resources/app/bin/code --wait"
+```
+2. Config kubecolor color theme to match with what you like by setting `KUBECOLOR_PRESET`. Please see their documentation https://kubecolor.github.io/customizing/themes/
