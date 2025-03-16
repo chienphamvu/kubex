@@ -5,7 +5,7 @@ KubeX is a command-line tool designed to enhance your kubectl experience by prov
 ## Dependencies
 
 - **kubectl**: The Kubernetes command-line tool.
-- **kubecolor**: For colored kubectl output.
+- **kubecolor**: (Optional) For colored kubectl output. Highly recommended.
 
 ## Installation
 
@@ -51,7 +51,7 @@ KubeX is a command-line tool designed to enhance your kubectl experience by prov
     alias kgp='kubex get pods'
     alias kgd='kubex get deployments'
     alias kgns='kubex get namespace'
-    alias kgsvc='kubectl get service'
+    alias kgsvc='kubex get service'
     alias kgvs='kubex get virtualservice'
     alias kggw='kubex get gateway'
     alias kgcm='kubex get configmap'
@@ -74,7 +74,7 @@ KubeX is a command-line tool designed to enhance your kubectl experience by prov
 
 ## Usage
 
-KubeX provides simplified commands for common Kubernetes operations. It leverages `kubectl` and `kubecolor` to provide a more efficient and user-friendly experience.
+KubeX provides simplified commands for common Kubernetes operations. It leverages `kubectl` to provide a more efficient and user-friendly experience. `kubecolor` is recommended for colored output.
 
 KubeX simplifies common `kubectl` commands. Here are some examples:
 
