@@ -132,7 +132,6 @@ kgp
 
 ```bash
 kubex describe 1
-kd 1
 ```
 
 ```
@@ -145,7 +144,6 @@ Namespace:    default
 
 ```bash
 kubex logs 1
-kl 1
 ```
 
 ```
@@ -156,7 +154,6 @@ kl 1
 
 ```bash
 kubex exec 1
-keti 1
 ```
 
 ```
@@ -167,7 +164,6 @@ keti 1
 
 ```bash
 kubex events 1
-kev 1
 ```
 
 ```
@@ -178,9 +174,11 @@ kev 1
 
 ### Environment Variables
 
--   **`KUBEX_DISABLE_CONTEXT_DETAILS`**: If set to `"true"`, disables the display of context details (cluster, namespace, resource type, scope) before listing resources.
+You can set these environment variables in your shell configuration file (e.g., `~/.zshrc` or `~/.bashrc`) using the `export` command, or directly in your terminal. Setting them in your shell configuration file makes them persistent across sessions.
 
--   **`KUBEX_ISOLATED`**: If set to `"true"`, isolates the namespace and context settings to the current terminal session.  This prevents changes from affecting other terminals.
+-   **`KUBEX_DISABLE_CONTEXT_DETAILS`**: If set to `"true"`, disables the display of context details (cluster, namespace, resource type, scope) before listing resources.  For example: `export KUBEX_DISABLE_CONTEXT_DETAILS="true"`.
+
+-   **`KUBEX_ISOLATED`**: If set to `"true"`, isolates the namespace and context settings to the current terminal session. This is useful if you want to use KubeX with different contexts or namespaces in different terminals without affecting each other.  You might want to set this variable directly in the terminal for specific sessions: `export KUBEX_ISOLATED="true"`.
 
 ### Special Features
 
@@ -190,13 +188,3 @@ kev 1
     kubex top 1 --gcp  # Opens the pod's metrics in GCP Console
     kubex logs 1 --gcp # Opens the pod's logs in GCP Console
     ```
-
-## Suggestions
-
-*   **Tab Completion**:  Consider adding tab completion for `kubex` commands and resource types.  This can greatly improve usability.  You could generate a completion script using `complete` command in bash and source it in your shell configuration.
-*   **More Aliases**: Add more aliases for common resource types and operations.  For example, `kga='kubex get all'` to get all resources in a namespace.
-*   **Configuration File**:  Instead of environment variables, consider using a configuration file (e.g., `~/.kubex.conf`) to store settings.  This allows for more complex configurations and easier management.
-*   **Error Handling**: Improve error handling to provide more informative messages to the user.  For example, check if `kubectl` and `kubecolor` are installed and provide instructions if they are not.
-*   **Interactive Mode**: Implement an interactive mode where users can select resources from a list using fuzzy finding or other techniques.
-*   **Update Mechanism**: Add a mechanism to easily update `kubex` to the latest version.
-*   **Documentation**: Expand the documentation to cover all commands, options, and configuration settings.
