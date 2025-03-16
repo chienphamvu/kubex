@@ -78,12 +78,6 @@ KubeX is a command-line tool designed to enhance your Kubernetes experience by p
 
 KubeX provides simplified commands for common Kubernetes operations. It leverages `kubectl` and `kubecolor` to provide a more efficient and user-friendly experience.
 
-### Core Commands
-
-| Command | Description                             | Equivalent               |
-|---------|-----------------------------------------|--------------------------|
-| `k`       | kubectl base command                    | `kubectl`                |
-| `kcgc`    | List contexts                           | `kubectl config get-contexts` |
 
 ### Get Resources
 
