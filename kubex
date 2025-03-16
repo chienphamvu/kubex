@@ -121,7 +121,7 @@ list_items() {
     kubecolor get "$object_type" ${CONTEXT_ARGS[@]} "$@"
   else
     echo "$object_type" > $LAST_LIST_FILE
-    kubecolor get "$object_type" --force-colors ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%6s  %s\n", "", $0; next} {print | "nl"}' >> $LAST_LIST_FILE
+    kubecolor get "$object_type" --force-colors ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
     # print but skip the first line which stores the object type
     tail -n +2 $LAST_LIST_FILE
   fi
@@ -204,7 +204,7 @@ handle_matching() {
     # remove number from the file
     matching_lines=$(echo "$matching_lines" | awk -F: '{print $1 ". " $2}' | awk '{print $2}')
     echo
-    echo "$matching_lines" | nl
+    echo "$matching_lines" | nl -w4 -S"  "
     echo
 
     read -p "Enter the line number to select: " selected_line_number
@@ -218,6 +218,13 @@ handle_matching() {
 
 show_last_list() {
   local grep_string="$1"
+
+  if [ -z "$grep_string" ]; then
+    echo
+    echo "    | CLUSTER: $CONTEXT"
+    echo "    | NAMESPACE: $NAMESPACE"
+    echo
+  fi
 
   if [ -n $1 ]; then
     tail -n +2 "$LAST_LIST_FILE" | awk 'NF' | grep "$1" | less -KEFS
@@ -324,6 +331,11 @@ handle_get() {
     "ns") object_type="namespace"
     ;;
   esac
+
+  echo
+  echo "    | CLUSTER: $CONTEXT"
+  echo "    | NAMESPACE: $NAMESPACE"
+  echo
 
   if [ -n "$grep_string" ]; then
     list_items "$object_type" "$all_namespaces_opt" $@ | grep "$grep_string" | less -KEFS
