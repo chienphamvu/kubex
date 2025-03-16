@@ -1,13 +1,11 @@
-# KubeX - Kubernetes Productivity Toolkit
+# KubeX - Kubectl Extreme
 
-KubeX is a command-line tool designed to enhance your Kubernetes experience by providing simplified commands and helpful shortcuts.
+KubeX is a command-line tool designed to enhance your kubectl experience by providing simplified commands and helpful shortcuts.
 
 ## Dependencies
 
 - **kubectl**: The Kubernetes command-line tool.
 - **kubecolor**: For colored kubectl output.
-- **bash**: KubeX is a bash script, so a bash environment is required.
-- **coreutils**: KubeX relies on standard core utilities like `grep`, `sed`, `awk`, `tail`, `nl`, `wc`, `cut`, `less`, `tty`, `tr`, and `mkdir`.
 
 ## Installation
 
@@ -112,36 +110,6 @@ These commands simplify `kubectl get` operations. The `in <namespace>` and `on <
     *   Example: `kubex get pods in dev` - Lists pods in a namespace matching "dev" (e.g., "dev-ns"). Kubex will prompt you to select the namespace if multiple matches are found.
 *   **Listing deployments in a specific namespace and context:** `kubex get deployments in <namespace> on <context>` (or `kgd in <namespace> on <context>`)
     *   Example: `kubex get deployments in prod on gke` - Lists deployments in a namespace matching "prod" on a context matching "gke". Kubex will prompt you to select the namespace and context if multiple matches are found.
-
-| Command | Resource Type      | Example Usage              |
-|-------|--------------------|----------------------------|
-| `kgp`   | Pods               | `kgp in dev-ns -l app=api` |
-| `kgd`   | Deployments        | `kgd -w` (watch mode)      |
-| `kgns`  | Namespaces         | `kgns`                     |
-| `kgsvc` | Services           | `kgsvc --sort-by=.metadata.creationTimestamp` |
-| `kgvs`  | VirtualServices    | `kgvs in istio-system`     |
-| `kggw`  | Gateways           | `kggw`                     |
-| `kgcm`  | ConfigMaps         | `kgcm`                     |
-| `kghpa` | HorizontalPodAutoscalers | `kghpa`               |
-| `kgse`  | ServiceEntries     | `kgse in default`          |
-| `kgds`  | DaemonSets         | `kgds`                     |
-| `kgrs`  | ReplicaSets        | `kgrs --show-labels`       |
-| `kgsec` | Secrets            | `kgsec`                    |
-| `kgn`   | Nodes              | `kgn`                     |
-| `kgl`   | Last list           | `kgl`                     |
-
-### Common Operations
-
-| Command | Description                             | Example                   |
-|---------|-----------------------------------------|---------------------------|
-| `kd`      | Describe resource                       | `kd 1`                    |
-| `kdel`    | Delete resource                         | `kdel 1`                  |
-| `kl`      | View pod logs                           | `kl 1`                    |
-| `keti`    | Execute command in container            | `keti 1`                  |
-| `kev`     | View resource events                    | `kev 1`                   |
-| `ke`      | Edit resource                           | `ke 1`                    |
-| `krr`     | Restart deployments                     | `krr 1`                   |
-| `ks`      | Switch context                         | `ks my-context`           |
 
 ## Examples
 
