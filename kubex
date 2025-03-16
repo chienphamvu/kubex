@@ -1,17 +1,23 @@
 #!/bin/bash
 
+# Define the temporary directory
+KUBEX_TMP_DIR="/tmp/kubex"
+
+# Create the temporary directory if it doesn't exist
+mkdir -p "$KUBEX_TMP_DIR"
+
 # Check if KUBEX_ISOLATED is set to true
 if [ "$KUBEX_ISOLATED" = "true" ]; then
   # Use the terminal session ID to isolate the namespace list
   session_id=$(tty | sed 's/\/dev\///')
-  LAST_LIST_FILE="/tmp/last_list_${session_id}.txt"
+  LAST_LIST_FILE="$KUBEX_TMP_DIR/last_list_${session_id}.txt"
 else
-  LAST_LIST_FILE="/tmp/last_list.txt"
+  LAST_LIST_FILE="$KUBEX_TMP_DIR/last_list.txt"
 fi
 
 # Create a temporary file to store context and namespace for the session
 session_id=$(tty | sed 's/\/dev\///' | tr -cd A-Za-z0-9_)
-session_config_file="/tmp/kubex_session_${session_id}.conf"
+session_config_file="$KUBEX_TMP_DIR/kubex_session_${session_id}.conf"
 
 # Function to write context and namespace to the session config file
 write_session_config() {
@@ -37,9 +43,9 @@ grep_and_switch_namespace() {
   if [ "$KUBEX_ISOLATED" = "true" ]; then
     # Use the terminal session ID to isolate the namespace list
     session_id=$(tty | sed 's/\/dev\///')
-    local namespaces_file="/tmp/namespaces_${CONTEXT}_${session_id}.txt"
+    local namespaces_file="$KUBEX_TMP_DIR/namespaces_${CONTEXT}_${session_id}.txt"
   else
-    local namespaces_file="/tmp/namespaces_$(kubectl config current-context).txt"
+    local namespaces_file="$KUBEX_TMP_DIR/namespaces_$(kubectl config current-context).txt"
   fi
 
   if [[ $namespace_substring =~ ^[0-9]+$ ]]; then
@@ -110,9 +116,9 @@ grep_and_switch_cluster() {
   if [ "$KUBEX_ISOLATED" = "true" ]; then
     # Use the terminal session ID to isolate the context list
     session_id=$(tty | sed 's/\/dev\///')
-    local contexts_file="/tmp/contexts_${session_id}.txt"
+    local contexts_file="$KUBEX_TMP_DIR/contexts_${session_id}.txt"
   else
-    local contexts_file="/tmp/contexts.txt"
+    local contexts_file="$KUBEX_TMP_DIR/contexts.txt"
   fi
 
   handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
