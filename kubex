@@ -13,7 +13,6 @@ then
   KUBECTL_COLOR="kubecolor"
 else
   KUBECTL_COLOR="kubectl"
-  echo "kubecolor not found, using kubectl instead. Please install kubecolor for colored output."
 fi
 
 # Define the temporary directory
@@ -404,7 +403,7 @@ handle_delete() {
 
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     set -x
-    kubecolor delete ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+    $KUBECTL_COLOR delete ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME" "$@"
   else
     echo "Keep it then!"
   fi
