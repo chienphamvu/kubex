@@ -27,14 +27,32 @@ write_session_config() {
 
 # Function to read context and namespace from the session config file
 read_session_config() {
+  local current_context_details
+
   if [ -f "$session_config_file" ] && [ "$KUBEX_ISOLATED" = "true" ]; then
     CONTEXT=$(grep "context:" "$session_config_file" | awk -F': ' '{print $2}')
     NAMESPACE=$(grep "namespace:" "$session_config_file" | awk -F': ' '{print $2}')
+  else
+    CONTEXT=$(kubectl config current-context)
+    current_context_details=$(kubectl config get-contexts | grep " ${CONTEXT} ")
+    NAMESPACE=$(echo "$current_context_details" | awk '{print $5}')
   fi
 }
 
 COMMAND=$1
 shift
+
+set_context_args() {
+  local object_type
+  CONTEXT_ARGS=()
+
+  if [ "$KUBEX_ISOLATED" = "true" ]; then
+    CONTEXT_ARGS+=("--context=$CONTEXT")
+    if [ "$object_type" != "ns" ] && [ "$object_type" != "namespace" ] && [ "$object_type" != "namespaces" ]; then
+      CONTEXT_ARGS+=("--namespace=$NAMESPACE")
+    fi
+  fi
+}
 
 grep_and_switch_namespace() {
   local namespace_substring=$1
@@ -55,7 +73,11 @@ grep_and_switch_namespace() {
   if ! ([ -f "$namespaces_file" ]) || ([ -f "$namespaces_file" ] && ! grep -q "$namespace_substring" "$namespaces_file"); then
     touch "$namespaces_file"
     echo "Getting namespaces..."
-    kubectl get namespaces > "$namespaces_file"
+    if [ "$KUBEX_ISOLATED" = "true" ]; then
+      kubectl get namespaces --context=$CONTEXT > "$namespaces_file"
+    else
+      kubectl get namespaces > "$namespaces_file"
+    fi
   fi
 
   handle_matching "$namespace_substring" "$namespaces_file" "namespace"
@@ -93,17 +115,13 @@ list_items() {
   local object=$1
   shift
 
-  if [ "$KUBEX_ISOLATED" = "true" ]; then
-    local args=("--namespace=$NAMESPACE" "--context=$CONTEXT")
-  else
-    local args=()
-  fi
+  set_context_args "$object_type"
 
   if [[ "$@" == *"-w"* ]] || [[ "$@" == "--watch" ]]; then
-    kubecolor get "$object" ${args[@]} "$@"
+    kubecolor get "$object_type" ${CONTEXT_ARGS[@]} "$@"
   else
-    echo "$object" > $LAST_LIST_FILE
-    kubecolor get "$object" --force-colors ${args[@]} $@ | awk 'NR <= 1 {printf "%6s  %s\n", "", $0; next} {print | "nl"}' >> $LAST_LIST_FILE
+    echo "$object_type" > $LAST_LIST_FILE
+    kubecolor get "$object_type" --force-colors ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%6s  %s\n", "", $0; next} {print | "nl"}' >> $LAST_LIST_FILE
     # print but skip the first line which stores the object type
     tail -n +2 $LAST_LIST_FILE
   fi
@@ -122,13 +140,14 @@ grep_and_switch_cluster() {
   fi
 
   handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
+  CONTEXT="$MATCH"
+
   if [ "$KUBEX_ISOLATED" = "true" ]; then
-    CONTEXT="$MATCH"
     write_session_config "$CONTEXT" "$NAMESPACE"
-    echo "Switched to cluster ${MATCH} (session-only)"
+    echo "Switched to cluster ${CONTEXT} (session-only)"
   else
-    kubectl config use-context "$MATCH"
-    echo "Switched to cluster ${MATCH}"
+    kubectl config use-context "$CONTEXT"
+    echo "Switched to cluster ${CONTEXT}"
   fi
 }
 
@@ -211,8 +230,8 @@ show_last_list() {
 #   COMMANDS
 ###############
 handle_get() {
-  local OBJECT=$1
-  local ALL_NAMESPACES_OPTIONS
+  local object_type=$1
+  local all_namespaces_opt
   local switch_ns
   local grep_string
   local namespace_substring
@@ -221,14 +240,14 @@ handle_get() {
 
   shift
 
-  if [[ "$OBJECT" == "last" ]]; then
+  if [[ "$object_type" == "last" ]]; then
     show_last_list "$@"
     exit 0
   fi
 
   if [[ "$1" == "in" ]]; then
     if [[ "$2" == "all" ]]; then
-      ALL_NAMESPACES_OPTIONS="--all-namespaces"
+      all_namespaces_opt="--all-namespaces"
     else
       switch_ns=true
       namespace_substring="$2"
@@ -255,67 +274,61 @@ handle_get() {
     shift
   fi
 
-  case "$OBJECT" in
-    "p") OBJECT="pod"
+  case "$object_type" in
+    "p") object_type="pod"
     ;;
-    "d") OBJECT="deployment"
+    "d") object_type="deployment"
     ;;
-    "svc") OBJECT="service"
+    "svc") object_type="service"
     ;;
-    "sa") OBJECT="ServiceAccount"
+    "sa") object_type="ServiceAccount"
     ;;
-    "a") OBJECT="applications"
+    "a") object_type="applications"
     ;;
-    "vs") OBJECT="VirtualServices"
+    "vs") object_type="VirtualServices"
     ;;
-    "mc") OBJECT="ManagedCertificate"
+    "mc") object_type="ManagedCertificate"
     ;;
-    "se") OBJECT="ServiceEntry"
+    "se") object_type="ServiceEntry"
     ;;
-    "sec") OBJECT="secret"
+    "sec") object_type="secret"
     ;;
-    "ss") OBJECT="StatefulSets"
+    "ss") object_type="StatefulSets"
     ;;
-    "ds") OBJECT="DaemonSets"
+    "ds") object_type="DaemonSets"
     ;;
-    "rs") OBJECT="ReplicaSets"
+    "rs") object_type="ReplicaSets"
     ;;
-    "rc") OBJECT="ReplicaControllers"
+    "rc") object_type="ReplicaControllers"
     ;;
-    "j") OBJECT="job"
+    "j") object_type="job"
     ;;
-    "cj") OBJECT="cronjob"
+    "cj") object_type="cronjob"
     ;;
-    "gw") OBJECT="gateway"
+    "gw") object_type="gateway"
     ;;
-    "i") OBJECT="ingress"
+    "i") object_type="ingress"
     ;;
-    "bc") OBJECT="BackendConfig"
+    "bc") object_type="BackendConfig"
     ;;
-    "dr") OBJECT="DestinationRule"
+    "dr") object_type="DestinationRule"
     ;;
-    "rb") OBJECT="rolebinding"
+    "rb") object_type="rolebinding"
     ;;
-    "r") OBJECT="roles"
+    "r") object_type="roles"
     ;;
-    "crb") OBJECT="clusterrolebinding"
+    "crb") object_type="clusterrolebinding"
     ;;
-    "cr") OBJECT="clusterroles"
+    "cr") object_type="clusterroles"
+    ;;
+    "ns") object_type="namespace"
     ;;
   esac
 
-  if [ -n "$NAMESPACE" ]; then
-    namespace_arg="--namespace=$NAMESPACE"
-  fi
-
-  if [ -n "$CONTEXT" ]; then
-    context_arg="--context=$CONTEXT"
-  fi
-
   if [ -n "$grep_string" ]; then
-    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@ | grep "$grep_string" | less -KEFS
+    list_items "$object_type" "$all_namespaces_opt" $@ | grep "$grep_string" | less -KEFS
   else
-    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@ | less -KEFS
+    list_items "$object_type" "$all_namespaces_opt" $@ | less -KEFS
   fi
 }
 
@@ -329,17 +342,10 @@ handle_describe() {
   fi
 
   get_object_details "$item_number"
-
-  local args=()
-  if [ -n "$CONTEXT" ]; then
-    args+=("--context=$CONTEXT")
-  fi
-  if [ -n "$NAMESPACE" ]; then
-    args+=("--namespace=$NAMESPACE")
-  fi
+  set_context_args $OBJECT_TYPE
 
   set -x
-  kubecolor describe "${args[@]}" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+  kubecolor describe ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME" "$@"
 }
 
 handle_delete() {
@@ -352,20 +358,14 @@ handle_delete() {
   fi
 
   get_object_details "$item_number"
+  set_context_args $OBJECT_TYPE
 
   read -p "Delete $OBJECT_TYPE $ITEM_NAME (y/N)? " -r REPLY
   echo
 
   if [[ $REPLY =~ ^[Yy]$ ]]; then
-    local args=()
-    if [ -n "$CONTEXT" ]; then
-      args+=("--context=$CONTEXT")
-    fi
-    if [ -n "$NAMESPACE" ]; then
-      args+=("--namespace=$NAMESPACE")
-    fi
     set -x
-    kubecolor delete "${args[@]}" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+    kubecolor delete ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME" "$@"
   else
     echo "Keep it then!"
   fi
@@ -381,17 +381,10 @@ handle_edit() {
   fi
 
   get_object_details "$item_number"
-
-  local args=()
-  if [ -n "$CONTEXT" ]; then
-    args+=("--context=$CONTEXT")
-  fi
-  if [ -n "$NAMESPACE" ]; then
-    args+=("--namespace=$NAMESPACE")
-  fi
+  set_context_args $OBJECT_TYPE
 
   set -x
-  kubectl edit "${args[@]}" "$OBJECT_TYPE" "$ITEM_NAME"
+  kubectl edit ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME"
 }
 
 handle_top() {
@@ -406,30 +399,22 @@ handle_top() {
     exit 1
   fi
 
-  get_object_details "$item_number"
-
   if [[ "$@" == *"--gcp"* ]]; then
-    current_context=$(kubectl config get-contexts | grep "*")
-    namespace=$(echo "$current_context" | awk '{print $5}')
-    cluster_project=$(echo "$current_context" | awk '{print $3}' | awk -F'_' '{print $2}')
+    current_context_details=$(kubectl config get-contexts | grep " ${CONTEXT} ")
+    cluster_project=$(echo "$current_context_details" | awk '{print $3}' | awk -F'_' '{print $2}')
 
-    url=$(construct_gcp_url "$cluster_project" "$namespace" "$ITEM_NAME" "metrics")
+    url=$(construct_gcp_url "$cluster_project" "$NAMESPACE" "$ITEM_NAME" "metrics")
 
     open_gcp_console_url "$url"
 
     exit 0
   fi
 
-  local args=()
-  if [ -n "$CONTEXT" ]; then
-    args+=("--context=$CONTEXT")
-  fi
-  if [ -n "$NAMESPACE" ]; then
-    args+=("--namespace=$NAMESPACE")
-  fi
+  get_object_details "$item_number"
+  set_context_args $OBJECT_TYPE
 
   set -x
-  kubecolor top "${args[@]}" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+  kubecolor top ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME" "$@"
 }
 
 handle_logs() {
@@ -444,19 +429,19 @@ handle_logs() {
     exit 1
   fi
 
-  get_object_details "$item_number"
-
   if [[ "$@" == *"--gcp"* ]]; then
-    current_context=$(kubectl config get-contexts | grep "*")
-    namespace=$(echo "$current_context" | awk '{print $5}')
-    cluster_project=$(echo "$current_context" | awk '{print $3}' | awk -F'_' '{print $2}')
+    current_context_details=$(kubectl config get-contexts | grep " ${CONTEXT} ")
+    cluster_project=$(echo "$current_context_details" | awk '{print $3}' | awk -F'_' '{print $2}')
 
-    url=$(construct_gcp_url "$cluster_project" "$namespace" "$ITEM_NAME" "logs")
+    url=$(construct_gcp_url "$cluster_project" "$NAMESPACE" "$ITEM_NAME" "logs")
 
     open_gcp_console_url "$url"
 
     exit 0
   fi
+
+  get_object_details "$item_number"
+  set_context_args $OBJECT_TYPE
 
   local tail_option=""
   if [[ "$@" == *"-f"* ]] || [[ "$@" == "--follow=true" ]]; then
@@ -468,16 +453,8 @@ handle_logs() {
     fi
   fi
 
-  local args=()
-  if [ -n "$CONTEXT" ]; then
-    args+=("--context=$CONTEXT")
-  fi
-  if [ -n "$NAMESPACE" ]; then
-    args+=("--namespace=$NAMESPACE")
-  fi
-
   set -x
-  kubectl logs "${args[@]}" "$OBJECT_TYPE"/"$ITEM_NAME" $tail_option "$@"
+  kubectl logs ${CONTEXT_ARGS[@]} "$OBJECT_TYPE"/"$ITEM_NAME" $tail_option "$@"
 }
 
 handle_rr() {
@@ -510,17 +487,10 @@ handle_events() {
   fi
 
   get_object_details
-
-  local args=()
-  if [ -n "$CONTEXT" ]; then
-    args+=("--context=$CONTEXT")
-  fi
-  if [ -n "$NAMESPACE" ]; then
-    args+=("--namespace=$NAMESPACE")
-  fi
+  set_context_args $OBJECT_TYPE
 
   set -x
-  kubecolor events "${args[@]}" --for "$OBJECT_TYPE"/"$ITEM_NAME" "$@"
+  kubecolor events ${CONTEXT_ARGS[@]} --for "$OBJECT_TYPE"/"$ITEM_NAME" "$@"
 }
 
 handle_exec() {
