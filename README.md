@@ -1,13 +1,13 @@
-# Kubex - Kubernetes Productivity Toolkit
+# KubeX - Kubernetes Productivity Toolkit
 
-Kubex is a command-line tool designed to enhance your Kubernetes experience by providing simplified commands and helpful shortcuts.
+KubeX is a command-line tool designed to enhance your Kubernetes experience by providing simplified commands and helpful shortcuts.
 
 ## Dependencies
 
 - **kubectl**: The Kubernetes command-line tool.
 - **kubecolor**: For colored kubectl output.
-- **bash**: Kubex is a bash script, so a bash environment is required.
-- **coreutils**: Kubex relies on standard core utilities like `grep`, `sed`, `awk`, `tail`, `nl`, `wc`, `cut`, `less`, `tty`, `tr`, and `mkdir`.
+- **bash**: KubeX is a bash script, so a bash environment is required.
+- **coreutils**: KubeX relies on standard core utilities like `grep`, `sed`, `awk`, `tail`, `nl`, `wc`, `cut`, `less`, `tty`, `tr`, and `mkdir`.
 
 ## Installation
 
@@ -76,7 +76,7 @@ Kubex is a command-line tool designed to enhance your Kubernetes experience by p
 
 ## Usage
 
-Kubex provides simplified commands for common Kubernetes operations. It leverages `kubectl` and `kubecolor` to provide a more efficient and user-friendly experience.
+KubeX provides simplified commands for common Kubernetes operations. It leverages `kubectl` and `kubecolor` to provide a more efficient and user-friendly experience.
 
 ### Core Commands
 
