@@ -116,6 +116,7 @@ These commands simplify `kubectl get` operations. The `in <namespace>` and `on <
 ### Get Pods
 
 ```bash
+kubex get pods
 kgp
 ```
 
@@ -130,6 +131,7 @@ kgp
 ### Describe a Pod
 
 ```bash
+kubex describe 1
 kd 1
 ```
 
@@ -142,6 +144,7 @@ Namespace:    default
 ### View Pod Logs
 
 ```bash
+kubex logs 1
 kl 1
 ```
 
@@ -152,6 +155,7 @@ kl 1
 ### Execute Command in Container
 
 ```bash
+kubex exec 1
 keti 1
 ```
 
@@ -162,6 +166,7 @@ keti 1
 ### View Resource Events
 
 ```bash
+kubex events 1
 kev 1
 ```
 
