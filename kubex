@@ -34,13 +34,10 @@ grep_and_switch_namespace() {
   local namespace_substring=$1
   MATCH=""
 
-  # Read existing context and namespace from session con`fig
-  read_session_config
-
   if [ "$KUBEX_ISOLATED" = "true" ]; then
     # Use the terminal session ID to isolate the namespace list
     session_id=$(tty | sed 's/\/dev\///')
-    local namespaces_file="/tmp/namespaces_$(kubectl config current-context)_${session_id}.txt"
+    local namespaces_file="/tmp/namespaces_${CONTEXT}_${session_id}.txt"
   else
     local namespaces_file="/tmp/namespaces_$(kubectl config current-context).txt"
   fi
@@ -73,24 +70,6 @@ grep_and_switch_namespace() {
   fi
 }
 
-make_list_numbered() {
-  local line_number=-1
-  local tmpfile=$(mktemp)
-
-  while IFS= read -r line; do
-    if [[ "$line_number" -eq -1 ]]; then
-      echo "$line" >> "$tmpfile"
-    elif [[ "$line_number" -eq 0 ]]; then
-      printf "  %s\n" "$line" >> "$tmpfile"
-    else
-      printf "%d %s\n" "$line_number" "$line" >> "$tmpfile"
-    fi
-    ((line_number++))
-  done < "$last_list_file"
-
-  mv "$tmpfile" "$last_list_file"
-}
-
 get_item_name() {
   local line_number="$1"
 
@@ -118,8 +97,8 @@ list_items() {
     kubecolor get "$object" ${args[@]} "$@"
   else
     echo "$object" > $last_list_file
-    kubecolor get "$object" --force-colors ${args[@]} $@ >> $last_list_file
-    make_list_numbered $last_list_file
+    kubecolor get "$object" --force-colors ${args[@]} $@ | awk 'NR <= 1 {printf "%6s  %s\n", "", $0; next} {print | "nl"}' >> $last_list_file
+    # print but skip the first line which stores the object type
     tail -n +2 $last_list_file
   fi
 }
@@ -132,20 +111,23 @@ grep_and_switch_cluster() {
   local cluster=$1
   MATCH=""
 
-  # Read existing context and namespace from session config
-  read_session_config
-
   if [ "$KUBEX_ISOLATED" = "true" ]; then
     # Use the terminal session ID to isolate the context list
     session_id=$(tty | sed 's/\/dev\///')
-    local contexts_file="/tmp/contexts_$(kubectl config current-context)_${session_id}.txt"
+    local contexts_file="/tmp/contexts_${session_id}.txt"
   else
-    local contexts_file="/tmp/contexts_$(kubectl config current-context).txt"
+    local contexts_file="/tmp/contexts.txt"
   fi
 
   handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
-  CONTEXT="$MATCH"
-  write_session_config "$CONTEXT" "$NAMESPACE"
+  if [ "$KUBEX_ISOLATED" = "true" ]; then
+    CONTEXT="$MATCH"
+    write_session_config "$CONTEXT" "$NAMESPACE"
+    echo "Switched to cluster ${MATCH} (session-only)"
+  else
+    kubectl config use-context "$MATCH"
+    echo "Switched to cluster ${MATCH}"
+  fi
 }
 
 get_object_details() {
@@ -197,13 +179,15 @@ handle_matching() {
     MATCH=$(echo "$matching_lines" | cut -d':' -f2- | awk '{print $1}')
   elif [[ "$line_count" -gt 1 ]]; then
     echo "Multiple matching ${resource_type} found:"
+    # remove number from the file
+    matching_lines=$(echo "$matching_lines" | awk -F: '{print $1 ". " $2}' | awk '{print $2}')
     echo
-    echo "$matching_lines" | awk -F: '{print $1 ". " $2}' | awk '{print $1 " " $2}'
+    echo "$matching_lines" | nl
     echo
 
     read -p "Enter the line number to select: " selected_line_number
 
-    MATCH=$(echo "$matching_lines" | awk -F: -v line_num="$selected_line_number" '$1 == line_num {print $2}' | awk '{print $1}')
+    MATCH=$(echo "$matching_lines" | awk -v line_num="$selected_line_number" 'NR == line_num { print }')
   else
     echo "Error: Unexpected condition."
     exit 1
@@ -214,9 +198,9 @@ show_last_list() {
   local grep_string="$1"
 
   if [ -n $1 ]; then
-    cat "$last_list_file" | grep "$1"
+    tail -n +2 "$last_list_file" | awk 'NF' | grep "$1" | less -KEFS
   else
-    cat "$last_list_file"
+    tail -n +2 "$last_list_file" | awk 'NF' | less -KEFS
   fi
 }
 
@@ -233,9 +217,6 @@ handle_get() {
   local context_substring
 
   shift
-
-  # Read existing context and namespace from session config
-  read_session_config
 
   if [[ "$OBJECT" == "last" ]]; then
     show_last_list "$@"
@@ -258,12 +239,12 @@ handle_get() {
     shift 2
   fi
 
-  if [ -n "$switch_ns" ]; then
-    grep_and_switch_namespace "$namespace_substring"
-  fi
-
   if [ -n "$switch_ctx" ]; then
     grep_and_switch_cluster "$context_substring"
+  fi
+
+  if [ -n "$switch_ns" ]; then
+    grep_and_switch_namespace "$namespace_substring"
   fi
 
   if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
@@ -329,18 +310,15 @@ handle_get() {
   fi
 
   if [ -n "$grep_string" ]; then
-    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@ | grep "$grep_string"
+    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@ | grep "$grep_string" | less -KEFS
   else
-    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@
+    list_items "$OBJECT" "$ALL_NAMESPACES_OPTIONS" $@ | less -KEFS
   fi
 }
 
 handle_describe() {
   local item_number=$1
   shift
-
-  # Read existing context and namespace from session config
-  read_session_config
 
   if [ -z "$item_number" ]; then
     kubecolor describe
@@ -449,15 +427,6 @@ handle_top() {
 
   set -x
   kubecolor top "${args[@]}" "$OBJECT_TYPE" "$ITEM_NAME" "$@"
-}
-
-handle_switch() {
-  local context_name=$1
-
-  kubectl config use-context "$context_name"
-  CONTEXT="$context_name"
-  kubectl get namespaces > "/tmp/namespaces_$(kubectl config current-context).txt"
-  write_session_config "$CONTEXT" "$NAMESPACE"
 }
 
 handle_logs() {
@@ -579,7 +548,7 @@ case "$COMMAND" in
     handle_top "$@"
     ;;
   "switch")
-    handle_switch "$@"
+    grep_and_switch_cluster "$@"
     ;;
   "logs")
     handle_logs "$@"
