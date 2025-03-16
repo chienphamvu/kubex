@@ -100,11 +100,18 @@ KubeX simplifies common `kubectl` commands. Here are some examples:
 
 ### Get Resources
 
-These commands simplify `kubectl get` operations. The `in` keyword filters by namespace, and `on` keyword switch context.
+These commands simplify `kubectl get` operations. The `in <namespace>` and `on <context>` keywords provide easy filtering and context switching. Kubex uses fuzzy matching, so you don't need to provide the full namespace or context name; Kubex will find the matches and prompt you to select.
 
 ```bash
 <command> [flags]
 ```
+
+**Examples:**
+
+*   **Listing pods in a specific namespace:** `kubex get pods in <namespace>` (or `kgp in <namespace>`)
+    *   Example: `kubex get pods in dev` - Lists pods in a namespace matching "dev" (e.g., "dev-ns"). Kubex will prompt you to select the namespace if multiple matches are found.
+*   **Listing deployments in a specific namespace and context:** `kubex get deployments in <namespace> on <context>` (or `kgd in <namespace> on <context>`)
+    *   Example: `kubex get deployments in prod on gke` - Lists deployments in a namespace matching "prod" on a context matching "gke". Kubex will prompt you to select the namespace and context if multiple matches are found.
 
 | Command | Resource Type      | Example Usage              |
 |-------|--------------------|----------------------------|
