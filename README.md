@@ -78,6 +78,25 @@ KubeX is a command-line tool designed to enhance your Kubernetes experience by p
 
 KubeX provides simplified commands for common Kubernetes operations. It leverages `kubectl` and `kubecolor` to provide a more efficient and user-friendly experience.
 
+KubeX simplifies common `kubectl` commands. Here are some examples:
+
+*   **Listing resources:** `kubex get <resource_type> [options]`
+    *   Example: `kubex get pods` (or `kgp`) - Lists all pods in the current namespace.
+    *   Example: `kubex get deployments in kube-system` (or `kgd in kube-system`) - Lists all deployments in the `kube-system` namespace.
+    *   Example: `kubex get services -o wide` (or `kgsvc -o wide`) - Lists all services with detailed output.
+
+*   **Describing resources:** `kubex describe <number>`
+    *   Example: `kubex describe 1` (or `kd 1`) - Describes the resource corresponding to line number 1 in the last list.
+
+*   **Viewing logs:** `kubex logs <number>`
+    *   Example: `kubex logs 2` (or `kl 2`) - Shows the logs for the resource corresponding to line number 2 in the last list.
+    *   Example: `kubex logs 2 -f` (or `kl 2 -f`) - Streams the logs for the resource corresponding to line number 2 in the last list.
+
+*   **Executing commands:** `kubex exec <number> [command]`
+    *   Example: `kubex exec 3` (or `keti 3`) - Opens a shell in the container of the resource corresponding to line number 3 in the last list.
+
+*   **Deleting resources:** `kubex delete <number>`
+    *   Example: `kubex delete 4` (or `kdel 4`) - Deletes the resource corresponding to line number 4 in the last list.
 
 ### Get Resources
 
