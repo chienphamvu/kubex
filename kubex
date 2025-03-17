@@ -297,6 +297,17 @@ handle_get() {
     shift 2
   fi
 
+  # support "in" both before and after "on"
+  if [[ "$1" == "in" ]]; then
+    if [[ "$2" == "all" ]]; then
+      all_namespaces_opt="--all-namespaces"
+    else
+      switch_ns=true
+      namespace_substring="$2"
+    fi
+    shift 2
+  fi
+
   if [ -n "$switch_ctx" ]; then
     grep_and_switch_cluster "$context_substring"
   fi
