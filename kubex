@@ -31,22 +31,22 @@ else
 fi
 
 # Create a temporary file to store context and namespace for the session
-session_id=$(tty | sed 's/\/dev\///' | tr -cd A-Za-z0-9_)
-session_config_file="$KUBEX_TMP_DIR/kubex_session_${session_id}.conf"
+SESSION_ID=$(tty | sed 's/\/dev\///' | tr -cd A-Za-z0-9_)
+SESSION_CONFIG_FILE="$KUBEX_TMP_DIR/kubex_session_${SESSION_ID}.conf"
 
 # Function to write context and namespace to the session config file
 write_session_config() {
-  echo "context: $1" > "$session_config_file"
-  echo "namespace: $2" >> "$session_config_file"
+  echo "context: $1" > "$SESSION_CONFIG_FILE"
+  echo "namespace: $2" >> "$SESSION_CONFIG_FILE"
 }
 
 # Function to read context and namespace from the session config file
 read_session_config() {
   local current_context_details
 
-  if [ -f "$session_config_file" ] && [ "$KUBEX_ISOLATED" = "true" ]; then
-    CONTEXT=$(grep "context:" "$session_config_file" | awk -F': ' '{print $2}')
-    NAMESPACE=$(grep "namespace:" "$session_config_file" | awk -F': ' '{print $2}')
+  if [ -f "$SESSION_CONFIG_FILE" ] && [ "$KUBEX_ISOLATED" = "true" ]; then
+    CONTEXT=$(grep "context:" "$SESSION_CONFIG_FILE" | awk -F': ' '{print $2}')
+    NAMESPACE=$(grep "namespace:" "$SESSION_CONFIG_FILE" | awk -F': ' '{print $2}')
   else
     CONTEXT=$(kubectl config current-context)
     current_context_details=$(kubectl config get-contexts | grep " ${CONTEXT} ")
@@ -71,14 +71,14 @@ set_context_args() {
 
 grep_and_switch_namespace() {
   local namespace_substring=$1
+  local namespaces_file
   MATCH=""
 
   if [ "$KUBEX_ISOLATED" = "true" ]; then
     # Use the terminal session ID to isolate the namespace list
-    session_id=$(tty | sed 's/\/dev\///')
-    local namespaces_file="$KUBEX_TMP_DIR/namespaces_${CONTEXT}_${session_id}.txt"
+    namespaces_file="$KUBEX_TMP_DIR/namespaces_${CONTEXT}_${SESSION_ID}.txt"
   else
-    local namespaces_file="$KUBEX_TMP_DIR/namespaces_$(kubectl config current-context).txt"
+    namespaces_file="$KUBEX_TMP_DIR/namespaces_$(kubectl config current-context).txt"
   fi
 
   if [[ $namespace_substring =~ ^[0-9]+$ ]]; then
@@ -95,21 +95,42 @@ grep_and_switch_namespace() {
     fi
   fi
 
-  handle_matching "$namespace_substring" "$namespaces_file" "namespace"
+  NAMESPACE="$namespace_substring"
+  if [ "$KUBEX_EXACT_MATCH_NS" != "true" ]; then
+    handle_matching "$namespace_substring" "$namespaces_file" "namespace"
+    NAMESPACE="$MATCH"
+  fi
 
   # switch default namespace
-  if [ -n "$MATCH" ]; then
-    NAMESPACE="$MATCH"
+  if [ -n "$NAMESPACE" ]; then
     if [ "$KUBEX_ISOLATED" = "true" ]; then
       write_session_config "$CONTEXT" "$NAMESPACE"
-      echo "Switched default namespace to $MATCH (session-only)"
+      echo "Switched default namespace to $NAMESPACE (session-only)"
     else
-      kubectl config set-context --current --namespace="$MATCH" > /dev/null
-      echo "Switched default namespace to $MATCH"
+      kubectl config set-context --current --namespace="$NAMESPACE" > /dev/null
+      echo "Switched default namespace to $NAMESPACE"
     fi
   else
     echo "No namespace matches '$namespace_substring'!"
     exit 1
+  fi
+}
+
+grep_and_switch_cluster() {
+  local cluster=$1
+  MATCH=""
+
+  CONTEXT="$cluster"
+  if [ "$KUBEX_EXACT_MATCH_CONTEXT" != "true" ]; then
+    handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
+    CONTEXT="$MATCH"
+  fi
+
+  if [ "$KUBEX_ISOLATED" = "true" ]; then
+    write_session_config "$CONTEXT" "$NAMESPACE"
+    echo "Switched to cluster ${CONTEXT} (session-only)"
+  else
+    kubectl config use-context "$CONTEXT"
   fi
 }
 
@@ -139,29 +160,6 @@ list_items() {
     $KUBECTL_COLOR get "$object_type" --force-colors ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
     # print but skip the first line which stores the object type
     tail -n +2 $LAST_LIST_FILE
-  fi
-}
-
-grep_and_switch_cluster() {
-  local cluster=$1
-  MATCH=""
-
-  if [ "$KUBEX_ISOLATED" = "true" ]; then
-    # Use the terminal session ID to isolate the context list
-    session_id=$(tty | sed 's/\/dev\///')
-    local contexts_file="$KUBEX_TMP_DIR/contexts_${session_id}.txt"
-  else
-    local contexts_file="$KUBEX_TMP_DIR/contexts.txt"
-  fi
-
-  handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
-  CONTEXT="$MATCH"
-
-  if [ "$KUBEX_ISOLATED" = "true" ]; then
-    write_session_config "$CONTEXT" "$NAMESPACE"
-    echo "Switched to cluster ${CONTEXT} (session-only)"
-  else
-    kubectl config use-context "$CONTEXT"
   fi
 }
 

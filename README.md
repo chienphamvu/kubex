@@ -196,6 +196,8 @@ You can set these environment variables in your shell configuration file (e.g., 
 -   **`KUBEX_DISABLE_CONTEXT_DETAILS`**: If set to `"true"`, disables the display of context details (cluster, namespace, resource type, scope) before listing resources.  For example: `export KUBEX_DISABLE_CONTEXT_DETAILS="true"`.
 
 -   **`KUBEX_ISOLATED`**: If set to `"true"`, isolates the namespace and context settings to the current terminal session. This is useful if you want to use KubeX with different contexts or namespaces in different terminals without affecting each other.  You might want to set this variable directly in the terminal for specific sessions: `export KUBEX_ISOLATED="true"`.
+-   **`KUBEX_EXACT_MATCH_NS`**: If set to `"true"`, disable fuzzy matching for namespace and use exact match instead.
+-   **`KUBEX_EXACT_MATCH_CONTEXT`**: If set to `"true"`, disable fuzzy matching for context and use exact match instead.
 
 ### Special Features
 
