@@ -186,6 +186,16 @@ construct_gcp_url() {
   echo "$url"
 }
 
+open_gcp_console_url() {
+  local url="$1"
+
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$url"
+  else
+    xdg-open "$url"
+  fi
+}
+
 handle_matching() {
   local grep_string="$1"
   local file="$2"
@@ -446,6 +456,9 @@ handle_top() {
     exit 1
   fi
 
+  get_object_details "$item_number"
+  set_context_args $OBJECT_TYPE
+
   if [[ "$@" == *"--gcp"* ]]; then
     current_context_details=$(kubectl config get-contexts | grep " ${CONTEXT} ")
     cluster_project=$(echo "$current_context_details" | awk '{print $3}' | awk -F'_' '{print $2}')
@@ -456,9 +469,6 @@ handle_top() {
 
     exit 0
   fi
-
-  get_object_details "$item_number"
-  set_context_args $OBJECT_TYPE
 
   set -x
   $KUBECTL_COLOR top ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME" "$@"
@@ -476,6 +486,9 @@ handle_logs() {
     exit 1
   fi
 
+  get_object_details "$item_number"
+  set_context_args $OBJECT_TYPE
+
   if [[ "$@" == *"--gcp"* ]]; then
     current_context_details=$(kubectl config get-contexts | grep " ${CONTEXT} ")
     cluster_project=$(echo "$current_context_details" | awk '{print $3}' | awk -F'_' '{print $2}')
@@ -486,9 +499,6 @@ handle_logs() {
 
     exit 0
   fi
-
-  get_object_details "$item_number"
-  set_context_args $OBJECT_TYPE
 
   local tail_option=""
   if [[ "$@" == *"-f"* ]] || [[ "$@" == "--follow=true" ]]; then
