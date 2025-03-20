@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Check if kubectl is installed
 if ! command -v kubectl &> /dev/null
 then
@@ -120,11 +122,8 @@ grep_and_switch_cluster() {
   local cluster=$1
   MATCH=""
 
-  CONTEXT="$cluster"
-  if [ "$KUBEX_EXACT_MATCH_CONTEXT" != "true" ]; then
-    handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
-    CONTEXT="$MATCH"
-  fi
+  handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
+  CONTEXT="$MATCH"
 
   if [ "$KUBEX_ISOLATED" = "true" ]; then
     write_session_config "$CONTEXT" "$NAMESPACE"
@@ -200,6 +199,12 @@ handle_matching() {
   local grep_string="$1"
   local file="$2"
   local resource_type="$3"
+
+  if ([ "$resource_type" == "cluster" ] && [ "$KUBEX_EXACT_MATCH_CONTEXT" = "true" ]) || \
+     ([ "$resource_type" == "namespace" ] && [ "$KUBEX_EXACT_MATCH_NS" = "true" ]); then
+    MATCH="$grep_string"
+    return
+  fi
 
   if [[ -z "$grep_string" || -z "$file" ]]; then
     echo "Usage: $0 <grep_string> <file>"

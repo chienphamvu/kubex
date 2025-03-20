@@ -12,8 +12,8 @@ KubeX is a `kubectl` wrapper that greatly enhances your `kubectl` experience by 
 1.  **Clone the repository:**
 
     ```bash
-    git clone <repository_url>
-    cd <repository_directory>
+    git clone https://github.com/chienphamvu/kubex
+    cd kubex
     ```
 
 2.  **Copy `kubex` to a directory in your `PATH` (e.g., `/usr/local/bin` or `~/bin`):**
@@ -41,12 +41,9 @@ KubeX is a `kubectl` wrapper that greatly enhances your `kubectl` experience by 
 
 4.  **Add aliases to your shell config (optional):**
 
-    Add these lines to your shell config (zshrc/bashrc):
+    Add these lines to your shell config (`~/.zshrc`/`~/.bashrc`):
 
     ```bash
-    export KUBECOLOR_PRESET="protanopia-dark"  # Color-blind friendly theme
-
-    # Add these aliases to your shell config (zshrc/bashrc):
     alias kcgc='kubectl config get-contexts'
     alias kg='kubex get'
     alias kgp='kubex get pods'
