@@ -191,10 +191,26 @@ grep_and_switch_namespace() {
 }
 
 grep_and_switch_cluster() {
-  local cluster=$1
+  local grep_string=$1
   MATCH=""
 
-  handle_matching "$cluster" "$(kubectl config get-contexts --output=name)" "cluster"
+  if [ -z "$grep_string" ]; then
+    echo "Available contexts:"
+    contexts=$(kubectl config get-contexts --output=name)
+    echo
+    echo "$contexts" | nl -w4 -s"  "
+    echo
+    read -p "Enter the line number to select a context: " selected_line_number
+
+    MATCH=$(echo "$contexts" | awk -v line_num="$selected_line_number" 'NR == line_num { print }')
+    if [ -z "$MATCH" ]; then
+      echo "Invalid selection."
+      exit 1
+    fi
+  else
+    handle_matching "$grep_string" "$(kubectl config get-contexts --output=name)" "cluster"
+  fi
+
   CONTEXT="$MATCH"
 
   if [ "$KUBEX_ISOLATED" = "true" ]; then
@@ -319,7 +335,7 @@ display_context_details() {
   local object_type=$1
   local scope="global"
 
-  if [ "$KUBEX_DISABLE_CONTEXT_DETAILS" = "true" ]; then
+  if [ "$KUBEX_DISABLE_CONTEXT_DETAILS" != "true" ]; then
     if [ "$KUBEX_ISOLATED" = "true" ]; then
       scope="terminal"
     fi
