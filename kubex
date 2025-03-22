@@ -59,6 +59,30 @@ read_session_config() {
   fi
 }
 
+show_kubex_usage() {
+  echo "Usage: kubex <command> [options]"
+  echo
+  echo "Available commands:"
+  echo "  get|g          Get resources"
+  echo "  describe|d     Describe a resource"
+  echo "  delete|del     Delete a resource"
+  echo "  edit|e         Edit a resource"
+  echo "  top|t          Display resource utilization"
+  echo "  switch|s       Switch Kubernetes context"
+  echo "  logs|l         Display logs for a resource"
+  echo "  rr             Rollout restart"
+  echo "  events|ev      Display events for a resource"
+  echo "  exec           Execute into a pod"
+  echo "  version|v      Display kubex and kubectl version"
+  echo
+  echo "For more information on each command, use: kubex <command> help"
+}
+
+if [ -z "$1" ] || [ "$1" = "help" ] ; then
+  show_kubex_usage
+  exit 0
+fi
+
 COMMAND=$1
 shift
 
@@ -614,6 +638,8 @@ case "$COMMAND" in
     ;;
   *)
     echo "Invalid command: $COMMAND"
+    echo
+    show_kubex_usage
     exit 1
     ;;
 esac
