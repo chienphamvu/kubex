@@ -399,12 +399,13 @@ handle_get() {
 
 handle_describe() {
   local item_number=$1
-  shift
 
   if [ -z "$item_number" ]; then
     $KUBECTL_COLOR describe
     exit 1
   fi
+
+  shift
 
   get_object_details "$item_number"
   set_context_args $OBJECT_TYPE
@@ -415,12 +416,13 @@ handle_describe() {
 
 handle_delete() {
   local item_number=$1
-  shift
 
   if [ -z "$item_number" ]; then
     $KUBECTL_COLOR delete
     exit 1
   fi
+
+  shift
 
   get_object_details "$item_number"
   set_context_args $OBJECT_TYPE
@@ -438,12 +440,13 @@ handle_delete() {
 
 handle_edit() {
   local item_number=$1
-  shift
 
   if [ -z "$item_number" ]; then
     kubectl edit
     exit 1
   fi
+
+  shift
 
   get_object_details "$item_number"
   set_context_args $OBJECT_TYPE
@@ -454,7 +457,6 @@ handle_edit() {
 
 handle_top() {
   local item_number=$1
-  shift
   local current_context
   local namespace
   local cluster_project
@@ -463,6 +465,8 @@ handle_top() {
     $KUBECTL_COLOR top
     exit 1
   fi
+
+  shift
 
   get_object_details "$item_number"
   set_context_args $OBJECT_TYPE
@@ -484,7 +488,6 @@ handle_top() {
 
 handle_logs() {
   local item_number=$1
-  shift
   local current_context
   local namespace
   local cluster_project
@@ -493,6 +496,8 @@ handle_logs() {
     $KUBECTL_COLOR logs
     exit 1
   fi
+
+  shift
 
   get_object_details "$item_number"
   set_context_args $OBJECT_TYPE
@@ -532,6 +537,8 @@ handle_rr() {
       exit 1
   fi
 
+  shift
+
   if [[ $item_number =~ ^[0-9]+$ ]]; then
     get_object_details
     set -x
@@ -544,12 +551,13 @@ handle_rr() {
 
 handle_events() {
   item_number=$1
-  shift
 
   if [ -z "$item_number" ]; then
     $KUBECTL_COLOR events
     exit 1
   fi
+
+  shift
 
   get_object_details
   set_context_args $OBJECT_TYPE
