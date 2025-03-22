@@ -78,6 +78,51 @@ show_kubex_usage() {
   echo "For more information on each command, use: kubex <command> help"
 }
 
+show_get_usage() {
+  echo "Usage: kubex get <resource> [options]"
+  echo
+  echo "Available resources:"
+  echo "  pod|p"
+  echo "  deployment|d"
+  echo "  service|svc"
+  echo "  ServiceAccount|sa"
+  echo "  namespace|ns"
+  echo "  secret|sec"
+  echo "  StatefulSets|ss"
+  echo "  DaemonSets|ds"
+  echo "  ReplicaSets|rs"
+  echo "  ReplicaControllers|rc"
+  echo "  job|j"
+  echo "  cronjob|cj"
+  echo "  RoleBinding|rb"
+  echo "  Role|r"
+  echo "  ClusterRoleBinding|crb"
+  echo "  ClusterRole|cr"
+  echo "  ingress|i"
+  echo "  BackendConfig|bc"
+  echo "  ManagedCertificate|mc"
+  echo "  gateway|gw"
+  echo "  VirtualServices|vs"
+  echo "  ServiceEntry|se"
+  echo "  DestinationRule|dr"
+  echo "  applications|a"
+  echo "  last                      Show last \"get\" resources from cache"
+  echo
+  echo "Options:"
+  echo "  in <namespace>    Specify a namespace"
+  echo "  in all            List resources in all namespaces"
+  echo "  on <context>      Switch to a different context"
+  echo "  <grep_string>     Filter resources by name"
+  echo
+  echo "Examples:"
+  echo "  kubex get pods"
+  echo "  kubex get svc in my-namespace"
+  echo "  kubex get deployments in all"
+  echo "  kubex get pods on my-cluster"
+  echo "  kubex get pods in my-namespace on my-cluster"
+  echo "  kubex get pods my-pod"
+}
+
 if [ -z "$1" ] || [ "$1" = "help" ] ; then
   show_kubex_usage
   exit 0
@@ -313,6 +358,11 @@ handle_get() {
   local namespace_substring
   local switch_ctx
   local context_substring
+
+  if [[ "$object_type" == "help" ]] || [[ -z "$object_type" ]]; then
+    show_get_usage
+    exit 0
+  fi
 
   shift
 
