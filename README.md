@@ -1,6 +1,6 @@
 # KubeX - kubectl eXtreme
 
-KubeX is a `kubectl` wrapper that greatly enhances your `kubectl` experience by providing simplified commands and helpful shortcuts. It uses `kubectl` to carry out the actual Kubernetes commands.
+**KubeX** is a kubectl wrapper that greatly enhances your kubectl experience by providing simplified commands and helpful shortcuts. It uses kubectl to carry out the actual Kubernetes commands.
 
 ## Dependencies
 
@@ -8,40 +8,15 @@ KubeX is a `kubectl` wrapper that greatly enhances your `kubectl` experience by 
 - **kubecolor**: (Optional) Provides colored kubectl output. Highly recommended.
 
 ## Installation
+1.  **Install KubeX using brew**
+```bash
+brew tap chienphamvu/tap
+brew install kubex
+```
 
-1.  **Clone the repository:**
+2.  **Add aliases to your shell config (optional - highly recommended):**
 
-    ```bash
-    git clone https://github.com/chienphamvu/kubex
-    cd kubex
-    ```
-
-2.  **Copy `kubex` to a directory in your `PATH` (e.g., `/usr/local/bin` or `~/bin`):**
-
-    ```bash
-    sudo cp kubex /usr/local/bin/
-    sudo chmod +x /usr/local/bin/kubex
-    ```
-
-    Alternatively, copy to `$HOME/.local/bin` and ensure that directory is in your `$PATH`.
-
-3.  **Set up your `PATH` (if necessary):**
-
-    If you copied `kubex` to a directory that's not already in your `PATH`, you'll need to add it. Edit your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.) and add the following line:
-
-    ```bash
-    export PATH="$PATH:/your/kubex/folder"  # The directory where you put kubex
-    ```
-
-    Then, source your shell configuration file:
-
-    ```bash
-    source ~/.bashrc  # Or the appropriate file for your shell
-    ```
-
-4.  **Add aliases to your shell config (optional):**
-
-    Add these lines to your shell config (`~/.zshrc` or `~/.bashrc`):
+    Add these aliases to your shell config (`~/.zshrc` or `~/.bashrc`):
 
     ```bash
     alias kg='kubex get'
@@ -84,18 +59,18 @@ KubeX is a `kubectl` wrapper that greatly enhances your `kubectl` experience by 
 
 ## Usage
 
-KubeX provides simplified commands for common Kubernetes operations, leveraging `kubectl` for a more efficient and user-friendly experience. `kubecolor` is highly recommended for colored output.
+**KubeX** provides simplified commands for common Kubernetes operations, leveraging kubectl for a more efficient and user-friendly experience. `kubecolor` is highly recommended for colored output.
 
 ### Get Resources
 
 This command does one simple but most important thing: displays the normal kubectl output with numbered lines. This greatly simplifies the subsequent commands you're going to execute on these resources (`describe`, `edit`, `logs`, etc.) since you won't have to type resource names or types (pod, deployment, etc.) again.
 
-It also supports `in <namespace>` and `on <context>` options for easy context and namespace switching. KubeX uses fuzzy matching, so you don't need to provide the full namespace or context name; KubeX will find the matches and prompt you to select from the available options.
+It also supports `in <namespace>` and `on <context>` options for easy context and namespace switching. **KubeX** uses fuzzy matching, so you don't need to provide the full namespace or context name; **KubeX** will find the matches and prompt you to select from the available options.
 
 ```bash
 kubex get <resource> [in <namespace>] [on <context>] [<string>] [flags]
 ```
-- `<resource>` can be any valid kubectl resource (`pod`, `deployment`, `service`, `serviceaccount`, etc.) or `last`, which is a special resource for KubeX that quickly shows the last list from the cache.
+- `<resource>` can be any valid kubectl resource (`pod`, `deployment`, `service`, `serviceaccount`, etc.) or `last`, which is a special resource for **KubeX** that quickly shows the last list from the cache.
 - `<namespace>` and `<context>` do not need to be an exact match. All subsequent commands will use this namespace and context by default.
 - `<string>` is the filter string to further refine the output (using `grep` essentially).
 - `[flags]` can be any valid kubectl flags.
@@ -275,7 +250,7 @@ This is especially useful to be used together with `<string>` to quicky filter r
 You can set these environment variables in your shell configuration file (e.g., `~/.zshrc` or `~/.bashrc`) using the `export` command, or directly in your terminal. Setting them in your shell configuration file makes them persistent across sessions.
 
 -   **`KUBEX_DISABLE_CONTEXT_DETAILS`**: If set to `"true"`, disables the display of context details (cluster, namespace, resource type, scope) before listing resources.  For example: `export KUBEX_DISABLE_CONTEXT_DETAILS="true"`.
--   **`KUBEX_ISOLATED`**: By default, if `in <namespace>` or `on <context>` are used in a command, the namespace/context is automatically switched for all subsequent commands for all terminals since it actually changes the actual `kubectl` configs. If `KUBEX_ISOLATED` is set to `"true"` in a terminal, namespace/context switching only affects the current terminal. This is especially helpful if you are working on multiple namespaces/contexts at the same time.  You might want to put this variable in your `~/.zshrc` or `~/.bashrc` to always isolate terminals: `export KUBEX_ISOLATED="true"`.
+-   **`KUBEX_ISOLATED`**: By default, if `in <namespace>` or `on <context>` are used in a command, the namespace/context is automatically switched for all subsequent commands for all terminals since it actually changes the actual kubectl configs. If `KUBEX_ISOLATED` is set to `"true"` in a terminal, namespace/context switching only affects the current terminal. This is especially helpful if you are working on multiple namespaces/contexts at the same time.  You might want to put this variable in your `~/.zshrc` or `~/.bashrc` to always isolate terminals: `export KUBEX_ISOLATED="true"`.
 -   **`KUBEX_EXACT_MATCH_NS`**: If set to `"true"`, disable fuzzy matching for namespace and use exact match instead.
 -   **`KUBEX_EXACT_MATCH_CONTEXT`**: If set to `"true"`, disable fuzzy matching for context and use exact match instead.
 
