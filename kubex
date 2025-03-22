@@ -568,37 +568,37 @@ handle_exec() {
 read_session_config
 
 case "$COMMAND" in
-  "get")
+  "get"|"g")
     handle_get "$@"
     ;;
-  "describe")
+  "describe"|"d")
     handle_describe "$@"
     ;;
-  "delete")
+  "delete"|"del")
     handle_delete "$@"
     ;;
-  "edit")
+  "edit"|"e")
     handle_edit "$@"
     ;;
-  "top")
+  "top"|"t")
     handle_top "$@"
     ;;
-  "switch")
+  "switch"|"s")
     grep_and_switch_cluster "$@"
     ;;
-  "logs")
+  "logs"|"l")
     handle_logs "$@"
     ;;
   "rr")
     handle_rr "$@"
     ;;
-  "events")
+  "events"|"ev")
     handle_events "$@"
     ;;
   "exec")
     handle_exec "$@"
     ;;
-  "version")
+  "version"|"v")
     echo "kubex version: $KUBEX_VERSION"
     echo
     echo "kubectl version:"
