@@ -2,6 +2,9 @@
 
 set -e
 
+# Kubex version
+KUBEX_VERSION="v0.1.0"
+
 # Check if kubectl is installed
 if ! command -v kubectl &> /dev/null
 then
@@ -594,6 +597,12 @@ case "$COMMAND" in
     ;;
   "exec")
     handle_exec "$@"
+    ;;
+  "version")
+    echo "kubex version: $KUBEX_VERSION"
+    echo
+    echo "kubectl version:"
+    kubectl version
     ;;
   *)
     echo "Invalid command: $COMMAND"
