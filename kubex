@@ -241,7 +241,7 @@ list_items() {
   set_context_args "$object_type"
 
   if [[ "$@" == *"-w"* ]] || [[ "$@" == "--watch" ]]; then
-    $KUBECTL_COLOR get "$object_type" ${CONTEXT_ARGS[@]} "$@"
+    $KUBECTL_COLOR get "$object_type" --force-colors ${CONTEXT_ARGS[@]} $@
   else
     echo "$object_type" > $LAST_LIST_FILE
     $KUBECTL_COLOR get "$object_type" --force-colors ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
