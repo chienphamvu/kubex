@@ -236,15 +236,20 @@ get_item_name() {
 
 list_items() {
   local object=$1
+  local force_color_option=""
   shift
 
   set_context_args "$object_type"
 
+  if [[ "$KUBECTL_COLOR" == "kubecolor" ]]; then
+    force_color_option="--force-colors"
+  fi
+
   if [[ "$@" == *"-w"* ]] || [[ "$@" == "--watch" ]]; then
-    $KUBECTL_COLOR get "$object_type" --force-colors ${CONTEXT_ARGS[@]} $@
+    $KUBECTL_COLOR get "$object_type" $force_color_option ${CONTEXT_ARGS[@]} $@
   else
     echo "$object_type" > $LAST_LIST_FILE
-    $KUBECTL_COLOR get "$object_type" --force-colors ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
+    $KUBECTL_COLOR get "$object_type" $force_color_option ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
     # print but skip the first line which stores the object type
     tail -n +2 $LAST_LIST_FILE
   fi

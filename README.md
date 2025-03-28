@@ -16,7 +16,7 @@ brew install kubex
 
 2.  **Add aliases to your shell config (optional - highly recommended):**
 
-    Add these aliases to your shell config (`~/.zshrc` or `~/.bashrc`):
+    Add these aliases - or any other aliases you can think of - to your shell config (`~/.zshrc` or `~/.bashrc`):
 
     ```bash
     alias kg='kubex get'
@@ -36,6 +36,7 @@ brew install kubex
     alias kgcrb='kubex get clusterrolebindings'
     alias kgdr='kubex get destinationrule'
     alias kgds='kubex get daemonset'
+    alias kgss='kubex get statefulsets'
     alias kgbc='kubex get backendconfig'
     alias kgfc='kubex get frontendconfig'
     alias kggw='kubex get cronjob'
