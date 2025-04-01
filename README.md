@@ -176,7 +176,7 @@ kev 1
 
 `[in <namespace>]` and `[on <context>]` options in `get` command use fuzzy matching so you don't have to type the full namespace/context name:
 ```
-kubex get pods in data on dev
+kubex get pods in app on dev
 ```
 Or with alias:
 ```
@@ -244,6 +244,15 @@ kgl
 ```
 This is especially useful to be used together with `<string>` to quicky filter resources from the last list: `kubex get last <string>`
 
+### Special Features
+
+-   **`--gcp` flag**: When used with `kubex top` or `kubex logs`, this flag opens the corresponding resource's metrics or logs in the Google Cloud Console, assuming you are running in a GCP environment and have the necessary permissions.
+
+    ```bash
+    kubex top 1 --gcp  # Opens the pod's metrics in GCP Console
+    kubex logs 1 --gcp # Opens the pod's logs in GCP Console
+    ```
+
 ## Configurations
 
 ### Environment Variables
@@ -255,14 +264,6 @@ You can set these environment variables in your shell configuration file (e.g., 
 -   **`KUBEX_EXACT_MATCH_NS`**: If set to `"true"`, disable fuzzy matching for namespace and use exact match instead.
 -   **`KUBEX_EXACT_MATCH_CONTEXT`**: If set to `"true"`, disable fuzzy matching for context and use exact match instead.
 
-### Special Features
-
--   **`--gcp` flag**: When used with `kubex top` or `kubex logs`, this flag opens the corresponding resource's metrics or logs in the Google Cloud Console, assuming you are running in a GCP environment and have the necessary permissions.
-
-    ```bash
-    kubex top 1 --gcp  # Opens the pod's metrics in GCP Console
-    kubex logs 1 --gcp # Opens the pod's logs in GCP Console
-    ```
 ### Tips
 1. kubectl has support for `KUBE_EDITOR` to point to your preferred editor for the `edit` command instead of relying on the standard `vi`.
 If you're using VS Code on macOS, you can set it as your default editor by adding this line to your `~/.bashrc` or `~/.zshrc`

@@ -305,13 +305,13 @@ handle_matching() {
   fi
 
   if [[ ! -f "$file" ]]; then
-    matching_lines=$(echo "$file" | grep -n "$grep_string")
+    matching_lines=$(echo "$file" | grep -n "$grep_string") || true
   else
-    matching_lines=$(tail -n +2 "$file" | grep -n "$grep_string")
+    matching_lines=$(tail -n +2 "$file" | grep -n "$grep_string") || true
   fi
 
   if [[ -z "$matching_lines" ]]; then
-    echo "No matching ${resource_type} found."
+    echo "No ${resource_type} found matching \"${grep_string}\"."
     exit 0
   fi
 
