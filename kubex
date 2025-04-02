@@ -3,7 +3,7 @@
 set -e
 
 # Kubex version
-KUBEX_VERSION="v0.1.0"
+KUBEX_VERSION="v0.1.2"
 
 # Check if kubectl is installed
 if ! command -v kubectl &> /dev/null
