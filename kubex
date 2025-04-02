@@ -483,6 +483,7 @@ handle_get() {
     ;;
   esac
 
+  read_session_config
   display_context_details "$object_type"
 
   if [ -n "$grep_string" ]; then
