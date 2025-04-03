@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.1.3
+
+- Fix handling isolated context of "exec" command
+
 ## v0.1.2
 
 - Fix namespace display detail on "get" command

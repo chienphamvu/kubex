@@ -666,7 +666,9 @@ handle_exec() {
   local item_number=$1
   shift
 
-  kubectl exec -t -i $(get_item_name $item_number) "$@" -- sh -c "(bash || ash || sh)"
+  get_object_details "$item_number"
+  set_context_args $OBJECT_TYPE
+  kubectl exec -t -i ${CONTEXT_ARGS[@]} $ITEM_NAME "$@" -- sh -c "(bash || ash || sh)"
 }
 
 read_session_config
