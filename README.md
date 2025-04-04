@@ -5,7 +5,7 @@
 ## Dependencies
 
 - **kubectl**: The Kubernetes command-line tool.
-- **kubecolor**: (Optional) Provides colored kubectl output. Highly recommended.
+- **[kubecolor](https://github.com/kubecolor/kubecolor)** (Optional): Provides colored kubectl output. Highly recommended.
 
 ## Installation
 1.  **Install KubeX using brew**
@@ -60,7 +60,7 @@ brew install kubex
 
 ## Usage
 
-**KubeX** provides simplified commands for common Kubernetes operations, leveraging kubectl for a more efficient and user-friendly experience. `kubecolor` is highly recommended for colored output.
+**KubeX** provides simplified commands for common Kubernetes operations, leveraging kubectl for a more efficient and user-friendly experience. **[kubecolor](https://github.com/kubecolor/kubecolor)** is highly recommended for colored output.
 
 ### Get Resources
 
