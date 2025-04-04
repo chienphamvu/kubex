@@ -78,6 +78,104 @@ show_kubex_usage() {
   echo "For more information on each command, use: kubex <command> help"
 }
 
+show_describe_usage() {
+  echo "Usage: kubex describe <resource_number>"
+  echo
+  echo "  <resource_number>     The number of the resource from the last 'get' command"
+  echo
+  echo "Example:"
+  echo "  kubex describe 1"
+}
+
+show_delete_usage() {
+  echo "Usage: kubex delete <resource_number>"
+  echo
+  echo "  <resource_number>     The number of the resource from the last 'get' command"
+  echo
+  echo "Example:"
+  echo "  kubex delete 1"
+}
+
+show_edit_usage() {
+  echo "Usage: kubex edit <resource_number>"
+  echo
+  echo "  <resource_number>     The number of the resource from the last 'get' command"
+  echo
+  echo "Example:"
+  echo "  kubex edit 1"
+}
+
+show_top_usage() {
+  echo "Usage: kubex top <resource_number> [options]"
+  echo
+  echo "  <resource_number>     The number of the resource from the last 'get' command"
+  echo
+  echo "Options:"
+  echo "  --gcp                 Open GCP console metrics for the resource"
+  echo
+  echo "Example:"
+  echo "  kubex top 1"
+  echo "  kubex top 1 --gcp"
+}
+
+show_switch_usage() {
+  echo "Usage: kubex switch [context_substring]"
+  echo
+  echo "  [context_substring]   Optional substring to filter contexts"
+  echo
+  echo "Examples:"
+  echo "  kubex switch"
+  echo "  kubex switch my-cluster"
+}
+
+show_logs_usage() {
+  echo "Usage: kubex logs <resource_number> [options]"
+  echo
+  echo "  <resource_number>     The number of the resource from the last 'get' command"
+  echo
+  echo "Options:"
+  echo "  -f, --follow[=true]   Specify if the logs should be streamed."
+  echo "  --tail=<number>       Number of lines to show from the end of the logs"
+  echo "  --gcp                 Open GCP console logs for the resource"
+  echo
+  echo "Examples:"
+  echo "  kubex logs 1"
+  echo "  kubex logs 1 -f"
+  echo "  kubex logs 1 --tail=100"
+  echo "  kubex logs 1 --gcp"
+}
+
+show_rr_usage() {
+  echo "Usage: kubex rr <resource_number> | <deployment_name>"
+  echo
+  echo "  <resource_number>   The number of the resource from the last 'get' command"
+  echo "  <deployment_name>   The name of the deployment to rollout restart"
+  echo
+  echo "Examples:"
+  echo "  kubex rr 1"
+  echo "  kubex rr my-deployment"
+}
+
+show_events_usage() {
+  echo "Usage: kubex events <resource_number>"
+  echo
+  echo "  <resource_number>     The number of the resource from the last 'get' command"
+  echo
+  echo "Example:"
+  echo "  kubex events 1"
+}
+
+show_exec_usage() {
+  echo "Usage: kubex exec <resource_number> [command]"
+  echo
+  echo "  <resource_number>     The number of the resource from the last 'get' command"
+  echo "  [command]             Optional command to execute (default: sh)"
+  echo
+  echo "Example:"
+  echo "  kubex exec 1"
+  echo "  kubex exec 1 ls -l"
+}
+
 show_get_usage() {
   echo "Usage: kubex get <resource> [options]"
   echo
@@ -123,7 +221,7 @@ show_get_usage() {
   echo "  kubex get pods my-pod"
 }
 
-if [ -z "$1" ] || [ "$1" = "help" ] ; then
+if [ -z "$1" ] || [ "$1" = "help" ]; then
   show_kubex_usage
   exit 0
 fi
@@ -496,9 +594,9 @@ handle_get() {
 handle_describe() {
   local item_number=$1
 
-  if [ -z "$item_number" ]; then
-    $KUBECTL_COLOR describe
-    exit 1
+  if [[ "$item_number" == "help" ]] || [[ -z "$item_number" ]]; then
+    show_describe_usage
+    exit 0
   fi
 
   shift
@@ -513,9 +611,9 @@ handle_describe() {
 handle_delete() {
   local item_number=$1
 
-  if [ -z "$item_number" ]; then
-    $KUBECTL_COLOR delete
-    exit 1
+  if [[ "$item_number" == "help" ]] || [[ -z "$item_number" ]]; then
+    show_delete_usage
+    exit 0
   fi
 
   shift
@@ -537,9 +635,9 @@ handle_delete() {
 handle_edit() {
   local item_number=$1
 
-  if [ -z "$item_number" ]; then
-    kubectl edit
-    exit 1
+  if [[ "$item_number" == "help" ]] || [[ -z "$item_number" ]]; then
+    show_edit_usage
+    exit 0
   fi
 
   shift
@@ -557,9 +655,9 @@ handle_top() {
   local namespace
   local cluster_project
 
-  if [ -z "$item_number" ]; then
-    $KUBECTL_COLOR top
-    exit 1
+  if [[ "$item_number" == "help" ]] || [[ -z "$item_number" ]]; then
+    show_top_usage
+    exit 0
   fi
 
   shift
@@ -588,9 +686,9 @@ handle_logs() {
   local namespace
   local cluster_project
 
-  if [ -z "$item_number" ]; then
-    $KUBECTL_COLOR logs
-    exit 1
+  if [[ "$item_number" == "help" ]] || [[ -z "$item_number" ]]; then
+    show_logs_usage
+    exit 0
   fi
 
   shift
@@ -628,9 +726,9 @@ handle_rr() {
   local object_type
   local item_name
 
-  if [ -z "$item_number" ]; then
-      $KUBECTL_COLOR rollout restart
-      exit 1
+  if [[ "$item_number" == "help" ]] || [[ -z "$item_number" ]]; then
+    show_rr_usage
+    exit 0
   fi
 
   shift
@@ -648,9 +746,9 @@ handle_rr() {
 handle_events() {
   item_number=$1
 
-  if [ -z "$item_number" ]; then
-    $KUBECTL_COLOR events
-    exit 1
+  if [[ "$item_number" == "help" ]] || [[ -z "$item_number" ]]; then
+    show_events_usage
+    exit 0
   fi
 
   shift
@@ -664,6 +762,12 @@ handle_events() {
 
 handle_exec() {
   local item_number=$1
+
+  if [[ "$item_number" == "help" ]] || [[ -z "$item_number" ]]; then
+    show_exec_usage
+    exit 0
+  fi
+
   shift
 
   get_object_details "$item_number"
