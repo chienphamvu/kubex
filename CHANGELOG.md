@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.1.4
+
+- Fix handling namespace right after "get <resource-type> in all"
+- Fix "kubex events" and "kubex rr" command
+
 ## v0.1.3
 
 - Fix handling isolated context of "exec" command

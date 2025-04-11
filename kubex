@@ -230,8 +230,21 @@ COMMAND=$1
 shift
 
 set_context_args() {
-  local object_type
+  local object_type=$1
+  local item_number=$2
   CONTEXT_ARGS=()
+  local all_namespaces
+
+  if [ -n "$item_number" ]; then
+    all_namespaces=$(head -n 2 "$LAST_LIST_FILE" | tail -n 1 | cut -d'=' -f2)
+
+    if [ "$all_namespaces" = "true" ] && grep -q "NAMESPACE " "$LAST_LIST_FILE"; then
+      item_namespace=$(awk -v line_num="$item_number" '$1 == line_num {print $2}' "$LAST_LIST_FILE" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
+      if [ "$item_namespace" != "$NAMESPACE" ]; then
+        grep_and_switch_namespace "$item_namespace"
+      fi
+    fi
+  fi
 
   if [ "$KUBEX_ISOLATED" = "true" ]; then
     CONTEXT_ARGS+=("--context=$CONTEXT")
@@ -321,8 +334,16 @@ grep_and_switch_cluster() {
 
 get_item_name() {
   local line_number="$1"
+  local all_namespaces
+  local item_name
 
-  item_name=$(awk -v line_num="$line_number" '$1 == line_num {print $2}' "$LAST_LIST_FILE" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
+  all_namespaces=$(head -n 2 "$LAST_LIST_FILE" | tail -n 1 | cut -d'=' -f2)
+
+  if [ "$all_namespaces" = "true" ] && grep -q "NAMESPACE " "$LAST_LIST_FILE"; then
+    item_name=$(awk -v line_num="$line_number" '$1 == line_num {print $3}' "$LAST_LIST_FILE" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
+  else
+    item_name=$(awk -v line_num="$line_number" '$1 == line_num {print $2}' "$LAST_LIST_FILE" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
+  fi
 
   if [[ -n "$item_name" ]]; then
     echo "$item_name"
@@ -347,9 +368,14 @@ list_items() {
     $KUBECTL_COLOR get "$object_type" $force_color_option ${CONTEXT_ARGS[@]} $@
   else
     echo "$object_type" > $LAST_LIST_FILE
+    if [ -n "$all_namespaces_opt" ]; then
+      echo "ALL_NAMESPACES=true" >> $LAST_LIST_FILE
+    else
+      echo "ALL_NAMESPACES=false" >> $LAST_LIST_FILE
+    fi
     $KUBECTL_COLOR get "$object_type" $force_color_option ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
-    # print but skip the first line which stores the object type
-    tail -n +2 $LAST_LIST_FILE
+    # print but skip the first 2 lines which stores the object type and all_namespaces
+    tail -n +3 $LAST_LIST_FILE
   fi
 }
 
@@ -460,9 +486,9 @@ show_last_list() {
   fi
 
   if [ -n $1 ]; then
-    tail -n +2 "$LAST_LIST_FILE" | awk 'NF' | grep "$1" | less -KEFS
+    tail -n +3 "$LAST_LIST_FILE" | awk 'NF' | grep "$1" | less -KEFS
   else
-    tail -n +2 "$LAST_LIST_FILE" | awk 'NF' | less -KEFS
+    tail -n +3 "$LAST_LIST_FILE" | awk 'NF' | less -KEFS
   fi
 }
 
@@ -582,6 +608,9 @@ handle_get() {
   esac
 
   read_session_config
+  if [ -n "$all_namespaces_opt" ]; then
+    NAMESPACE="all"
+  fi
   display_context_details "$object_type"
 
   if [ -n "$grep_string" ]; then
@@ -602,7 +631,7 @@ handle_describe() {
   shift
 
   get_object_details "$item_number"
-  set_context_args $OBJECT_TYPE
+  set_context_args "$OBJECT_TYPE" "$item_number"
 
   set -x
   $KUBECTL_COLOR describe ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME" "$@"
@@ -619,7 +648,7 @@ handle_delete() {
   shift
 
   get_object_details "$item_number"
-  set_context_args $OBJECT_TYPE
+  set_context_args "$OBJECT_TYPE" "$item_number"
 
   read -p "Delete $OBJECT_TYPE $ITEM_NAME (y/N)? " -r REPLY
   echo
@@ -643,7 +672,7 @@ handle_edit() {
   shift
 
   get_object_details "$item_number"
-  set_context_args $OBJECT_TYPE
+  set_context_args "$OBJECT_TYPE" "$item_number"
 
   set -x
   kubectl edit ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME"
@@ -663,7 +692,7 @@ handle_top() {
   shift
 
   get_object_details "$item_number"
-  set_context_args $OBJECT_TYPE
+  set_context_args "$OBJECT_TYPE" "$item_number"
 
   if [[ "$@" == *"--gcp"* ]]; then
     current_context_details=$(kubectl config get-contexts | grep " ${CONTEXT} ")
@@ -694,7 +723,7 @@ handle_logs() {
   shift
 
   get_object_details "$item_number"
-  set_context_args $OBJECT_TYPE
+  set_context_args "$OBJECT_TYPE" "$item_number"
 
   if [[ "$@" == *"--gcp"* ]]; then
     current_context_details=$(kubectl config get-contexts | grep " ${CONTEXT} ")
@@ -734,7 +763,7 @@ handle_rr() {
   shift
 
   if [[ $item_number =~ ^[0-9]+$ ]]; then
-    get_object_details
+    get_object_details "$item_number"
     set -x
     $KUBECTL_COLOR rollout restart "$OBJECT_TYPE"/"$ITEM_NAME"
   else
@@ -753,8 +782,8 @@ handle_events() {
 
   shift
 
-  get_object_details
-  set_context_args $OBJECT_TYPE
+  get_object_details "$item_number"
+  set_context_args "$OBJECT_TYPE" "$item_number"
 
   set -x
   $KUBECTL_COLOR events ${CONTEXT_ARGS[@]} --for "$OBJECT_TYPE"/"$ITEM_NAME" "$@"
@@ -771,7 +800,7 @@ handle_exec() {
   shift
 
   get_object_details "$item_number"
-  set_context_args $OBJECT_TYPE
+  set_context_args "$OBJECT_TYPE" "$item_number"
   kubectl exec -t -i ${CONTEXT_ARGS[@]} $ITEM_NAME "$@" -- sh -c "(bash || ash || sh)"
 }
 
