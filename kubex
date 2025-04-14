@@ -526,6 +526,10 @@ handle_get() {
   if [[ "$1" == "in" ]]; then
     if [[ "$2" == "all" ]]; then
       all_namespaces_opt="--all-namespaces"
+    elif [[ "$2" =~ ^[0-9]+$ ]]; then
+      get_object_details "$2"
+      switch_ns=true
+      namespace_substring="$ITEM_NAME"
     else
       switch_ns=true
       namespace_substring="$2"

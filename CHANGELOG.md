@@ -1,11 +1,12 @@
 # Change Log
 
-## v0.1.4
+## v0.2.0
 
+- Add support for "kubex get <resource-type> in <number>" when the previous command is "kubex get ns"
+- Support both names and numbers
 - Fix handling namespace for "get <resource-type> in all"
 - Fix "kubex events" and "kubex rr" command
 - Fix handling resource-type and namespace for "get all"
-- Fix support both names and numbers
 
 ## v0.1.3
 
