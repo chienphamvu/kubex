@@ -296,7 +296,7 @@ grep_and_switch_namespace() {
       echo "Switched default namespace to $NAMESPACE"
     fi
   else
-    echo "No namespace matches '$namespace_substring'!"
+    >&2 echo "No namespace matches '$namespace_substring'!"
     exit 1
   fi
 }
@@ -315,7 +315,7 @@ grep_and_switch_cluster() {
 
     MATCH=$(echo "$contexts" | awk -v line_num="$selected_line_number" 'NR == line_num { print }')
     if [ -z "$MATCH" ]; then
-      echo "Invalid selection."
+      >&2 echo "Invalid selection."
       exit 1
     fi
   else
@@ -348,7 +348,7 @@ get_item_name() {
   if [[ -n "$item_name" ]]; then
     echo "$item_name"
   else
-    echo "Error: '$line_number' does not exist!"
+    >&2 echo "Error: '$line_number' does not exist!"
     exit 1
   fi
 }
@@ -428,7 +428,7 @@ handle_matching() {
   fi
 
   if [[ -z "$grep_string" || -z "$file" ]]; then
-    echo "Usage: $0 <grep_string> <file>"
+    >&2 echo "Usage: $0 <grep_string> <file>"
     exit 1
   fi
 
@@ -439,8 +439,8 @@ handle_matching() {
   fi
 
   if [[ -z "$matching_lines" ]]; then
-    echo "No ${resource_type} found matching \"${grep_string}\"."
-    exit 0
+    >&2 echo "No ${resource_type} found matching \"${grep_string}\"."
+    exit 1
   fi
 
   line_count=$(echo "$matching_lines" | wc -l)
@@ -459,7 +459,7 @@ handle_matching() {
 
     MATCH=$(echo "$matching_lines" | awk -v line_num="$selected_line_number" 'NR == line_num { print }')
   else
-    echo "Error: Unexpected condition."
+    >&2 echo "Error: Unexpected condition."
     exit 1
   fi
 }
@@ -860,7 +860,7 @@ case "$COMMAND" in
     kubectl version
     ;;
   *)
-    echo "Invalid command: $COMMAND"
+    >&2 echo "Invalid command: $COMMAND"
     echo
     show_kubex_usage
     exit 1
