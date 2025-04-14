@@ -355,6 +355,7 @@ get_item_name() {
 
 list_items() {
   local object=$1
+  local all_namespaces_opt=$2
   local force_color_option=""
   shift
 
@@ -383,6 +384,9 @@ get_object_details() {
   local item_number=$1
 
   OBJECT_TYPE=$(head -n 1 "$LAST_LIST_FILE")
+  if [ "$OBJECT_TYPE" = "all" ]; then
+    OBJECT_TYPE=""
+  fi
   ITEM_NAME=$(get_item_name "$item_number")
 }
 
@@ -486,9 +490,9 @@ show_last_list() {
   fi
 
   if [ -n $1 ]; then
-    tail -n +3 "$LAST_LIST_FILE" | awk 'NF' | grep "$1" | less -KEFS
+    tail -n +3 "$LAST_LIST_FILE" | grep "$1" | less -KEFS
   else
-    tail -n +3 "$LAST_LIST_FILE" | awk 'NF' | less -KEFS
+    tail -n +3 "$LAST_LIST_FILE" | less -KEFS
   fi
 }
 
@@ -634,7 +638,7 @@ handle_describe() {
   set_context_args "$OBJECT_TYPE" "$item_number"
 
   set -x
-  $KUBECTL_COLOR describe ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+  $KUBECTL_COLOR describe ${CONTEXT_ARGS[@]} $OBJECT_TYPE "$ITEM_NAME" "$@"
 }
 
 handle_delete() {
@@ -655,7 +659,7 @@ handle_delete() {
 
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     set -x
-    $KUBECTL_COLOR delete ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+    $KUBECTL_COLOR delete ${CONTEXT_ARGS[@]} $OBJECT_TYPE "$ITEM_NAME" "$@"
   else
     echo "Keep it then!"
   fi
@@ -675,7 +679,7 @@ handle_edit() {
   set_context_args "$OBJECT_TYPE" "$item_number"
 
   set -x
-  kubectl edit ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME"
+  kubectl edit ${CONTEXT_ARGS[@]} $OBJECT_TYPE "$ITEM_NAME"
 }
 
 handle_top() {
@@ -706,7 +710,7 @@ handle_top() {
   fi
 
   set -x
-  $KUBECTL_COLOR top ${CONTEXT_ARGS[@]} "$OBJECT_TYPE" "$ITEM_NAME" "$@"
+  $KUBECTL_COLOR top ${CONTEXT_ARGS[@]} $OBJECT_TYPE "$ITEM_NAME" "$@"
 }
 
 handle_logs() {
@@ -746,8 +750,12 @@ handle_logs() {
     fi
   fi
 
+  item_id="$ITEM_NAME"
+  if [ -n "$OBJECT_TYPE" ]; then
+    item_id="${OBJECT_TYPE}/${ITEM_NAME}"
+  fi
   set -x
-  kubectl logs ${CONTEXT_ARGS[@]} "$OBJECT_TYPE"/"$ITEM_NAME" $tail_option "$@"
+  kubectl logs ${CONTEXT_ARGS[@]} "$item_id" $tail_option "$@"
 }
 
 handle_rr() {
@@ -764,8 +772,12 @@ handle_rr() {
 
   if [[ $item_number =~ ^[0-9]+$ ]]; then
     get_object_details "$item_number"
+    item_id="$ITEM_NAME"
+    if [ -n "$OBJECT_TYPE" ]; then
+      item_id="${OBJECT_TYPE}/${ITEM_NAME}"
+    fi
     set -x
-    $KUBECTL_COLOR rollout restart "$OBJECT_TYPE"/"$ITEM_NAME"
+    $KUBECTL_COLOR rollout restart "$item_id"
   else
     set -x
     $KUBECTL_COLOR rollout restart "$item_number"
@@ -785,8 +797,12 @@ handle_events() {
   get_object_details "$item_number"
   set_context_args "$OBJECT_TYPE" "$item_number"
 
+  item_id="$ITEM_NAME"
+  if [ -n "$OBJECT_TYPE" ]; then
+    item_id="${OBJECT_TYPE}/${ITEM_NAME}"
+  fi
   set -x
-  $KUBECTL_COLOR events ${CONTEXT_ARGS[@]} --for "$OBJECT_TYPE"/"$ITEM_NAME" "$@"
+  $KUBECTL_COLOR events ${CONTEXT_ARGS[@]} --for "$item_id" "$@"
 }
 
 handle_exec() {

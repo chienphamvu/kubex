@@ -2,8 +2,9 @@
 
 ## v0.1.4
 
-- Fix handling namespace right after "get <resource-type> in all"
+- Fix handling namespace for "get <resource-type> in all"
 - Fix "kubex events" and "kubex rr" command
+- Fix handling resource-type and namespace for "get all"
 
 ## v0.1.3
 
