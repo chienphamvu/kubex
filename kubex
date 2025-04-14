@@ -339,10 +339,13 @@ get_item_name() {
 
   all_namespaces=$(head -n 2 "$LAST_LIST_FILE" | tail -n 1 | cut -d'=' -f2)
 
-  if [ "$all_namespaces" = "true" ] && grep -q "NAMESPACE " "$LAST_LIST_FILE"; then
-    item_name=$(awk -v line_num="$line_number" '$1 == line_num {print $3}' "$LAST_LIST_FILE" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
-  else
-    item_name=$(awk -v line_num="$line_number" '$1 == line_num {print $2}' "$LAST_LIST_FILE" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
+  item_name="$line_number"
+  if [[ $line_number =~ ^[0-9]+$ ]]; then
+    if [ "$all_namespaces" = "true" ] && grep -q "NAMESPACE " "$LAST_LIST_FILE"; then
+      item_name=$(awk -v line_num="$line_number" '$1 == line_num {print $3}' "$LAST_LIST_FILE" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
+    else
+      item_name=$(awk -v line_num="$line_number" '$1 == line_num {print $2}' "$LAST_LIST_FILE" | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g')
+    fi
   fi
 
   if [[ -n "$item_name" ]]; then
@@ -770,18 +773,13 @@ handle_rr() {
 
   shift
 
-  if [[ $item_number =~ ^[0-9]+$ ]]; then
-    get_object_details "$item_number"
-    item_id="$ITEM_NAME"
-    if [ -n "$OBJECT_TYPE" ]; then
-      item_id="${OBJECT_TYPE}/${ITEM_NAME}"
-    fi
-    set -x
-    $KUBECTL_COLOR rollout restart "$item_id"
-  else
-    set -x
-    $KUBECTL_COLOR rollout restart "$item_number"
+  get_object_details "$item_number"
+  item_id="$ITEM_NAME"
+  if [ -n "$OBJECT_TYPE" ]; then
+    item_id="${OBJECT_TYPE}/${ITEM_NAME}"
   fi
+  set -x
+  $KUBECTL_COLOR rollout restart "$item_id"
 }
 
 handle_events() {

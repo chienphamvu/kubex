@@ -5,6 +5,7 @@
 - Fix handling namespace for "get <resource-type> in all"
 - Fix "kubex events" and "kubex rr" command
 - Fix handling resource-type and namespace for "get all"
+- Fix support both names and numbers
 
 ## v0.1.3
 
