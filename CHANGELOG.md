@@ -4,6 +4,7 @@
 
 - Add support for "kubex get <resource-type> in <number>" when the previous command is "kubex get ns"
 - Support both names and numbers
+- Support grep string for "get" command before "in" or "on"
 - Fix handling namespace for "get <resource-type> in all"
 - Fix "kubex events" and "kubex rr" command
 - Fix handling resource-type and namespace for "get all"

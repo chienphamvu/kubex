@@ -523,6 +523,11 @@ handle_get() {
     exit 0
   fi
 
+  if [[ -n "$1" ]] && [[ "$1" != -* ]] && [[ "$1" != "in" ]] && [[ "$1" != "on" ]]; then
+    grep_string="$1"
+    shift
+  fi
+
   if [[ "$1" == "in" ]]; then
     if [[ "$2" == "all" ]]; then
       all_namespaces_opt="--all-namespaces"
@@ -562,7 +567,7 @@ handle_get() {
     grep_and_switch_namespace "$namespace_substring"
   fi
 
-  if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+  if [[ -n "$1" ]] && [[ "$1" != -* ]] && [ -z "$grep_string" ]; then
     grep_string="$1"
     shift
   fi
