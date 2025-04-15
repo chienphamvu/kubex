@@ -56,6 +56,11 @@ read_session_config() {
     CONTEXT=$(kubectl config current-context)
     current_context_details=$(kubectl config get-contexts | grep " ${CONTEXT} ")
     NAMESPACE=$(echo "$current_context_details" | awk '{print $5}')
+
+    # initialize session config as soon as possible to persist configuration
+    if [ ! -f "$SESSION_CONFIG_FILE" ] && [ "$KUBEX_ISOLATED" = "true" ]; then
+      write_session_config "$CONTEXT" "$NAMESPACE"
+    fi
   fi
 }
 
