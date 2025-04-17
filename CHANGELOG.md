@@ -7,6 +7,8 @@
 - Support grep string for "get" command before "in" or "on"
 - Support for "--gcp" flags for "kubex events"
 - Initialize session config as soon as possible to persist isolated configuration
+- Use kubecolor for logs
+- Add support for "kubex get <number>"
 - Fix handling namespace for "get <resource-type> in all"
 - Fix "kubex events" and "kubex rr" command
 - Fix handling resource-type and namespace for "get all"

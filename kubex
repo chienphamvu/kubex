@@ -518,128 +518,137 @@ handle_get() {
   local switch_ctx
   local context_substring
 
-  if [[ "$object_type" == "help" ]] || [[ -z "$object_type" ]]; then
-    show_get_usage
-    exit 0
-  fi
-
-  shift
-
-  if [[ "$object_type" == "last" ]]; then
-    show_last_list "$@"
-    exit 0
-  fi
-
-  if [[ -n "$1" ]] && [[ "$1" != -* ]] && [[ "$1" != "in" ]] && [[ "$1" != "on" ]]; then
-    grep_string="$1"
+  # if input is a number
+  if [[ $object_type =~ ^[0-9]+$ ]]; then
+    get_object_details "$object_type"
+    set_context_args "$OBJECT_TYPE" "$object_type"
     shift
-  fi
-
-  if [[ "$1" == "in" ]]; then
-    if [[ "$2" == "all" ]]; then
-      all_namespaces_opt="--all-namespaces"
-    elif [[ "$2" =~ ^[0-9]+$ ]]; then
-      get_object_details "$2"
-      switch_ns=true
-      namespace_substring="$ITEM_NAME"
-    else
-      switch_ns=true
-      namespace_substring="$2"
-    fi
-    shift 2
-  fi
-
-  if [[ "$1" == "on" ]]; then
-    switch_ctx=true
-    context_substring="$2"
-    shift 2
-  fi
-
-  # support "in" both before and after "on"
-  if [[ "$1" == "in" ]]; then
-    if [[ "$2" == "all" ]]; then
-      all_namespaces_opt="--all-namespaces"
-    else
-      switch_ns=true
-      namespace_substring="$2"
-    fi
-    shift 2
-  fi
-
-  if [ -n "$switch_ctx" ]; then
-    grep_and_switch_cluster "$context_substring"
-  fi
-
-  if [ -n "$switch_ns" ]; then
-    grep_and_switch_namespace "$namespace_substring"
-  fi
-
-  if [[ -n "$1" ]] && [[ "$1" != -* ]] && [ -z "$grep_string" ]; then
-    grep_string="$1"
-    shift
-  fi
-
-  case "$object_type" in
-    "p") object_type="pod"
-    ;;
-    "d") object_type="deployment"
-    ;;
-    "svc") object_type="service"
-    ;;
-    "sa") object_type="ServiceAccount"
-    ;;
-    "a") object_type="applications"
-    ;;
-    "vs") object_type="VirtualServices"
-    ;;
-    "mc") object_type="ManagedCertificate"
-    ;;
-    "se") object_type="ServiceEntry"
-    ;;
-    "sec") object_type="secret"
-    ;;
-    "ss") object_type="StatefulSets"
-    ;;
-    "ds") object_type="DaemonSets"
-    ;;
-    "rs") object_type="ReplicaSets"
-    ;;
-    "rc") object_type="ReplicaControllers"
-    ;;
-    "j") object_type="job"
-    ;;
-    "cj") object_type="cronjob"
-    ;;
-    "gw") object_type="gateway"
-    ;;
-    "i") object_type="ingress"
-    ;;
-    "bc") object_type="BackendConfig"
-    ;;
-    "dr") object_type="DestinationRule"
-    ;;
-    "rb") object_type="rolebinding"
-    ;;
-    "r") object_type="roles"
-    ;;
-    "crb") object_type="clusterrolebinding"
-    ;;
-    "cr") object_type="clusterroles"
-    ;;
-    "ns") object_type="namespace"
-    ;;
-  esac
-
-  read_session_config
-  if [ -n "$all_namespaces_opt" ]; then
-    NAMESPACE="all"
-  fi
-  display_context_details "$object_type"
-
-  if [ -n "$grep_string" ]; then
-    list_items "$object_type" "$all_namespaces_opt" $@ | grep "$grep_string" | less -KEFS
+    set -x
+    kubecolor get $OBJECT_TYPE $ITEM_NAME $@
   else
-    list_items "$object_type" "$all_namespaces_opt" $@ | less -KEFS
+    if [[ "$object_type" == "help" ]] || [[ -z "$object_type" ]]; then
+      show_get_usage
+      exit 0
+    fi
+
+    shift
+
+    if [[ "$object_type" == "last" ]]; then
+      show_last_list "$@"
+      exit 0
+    fi
+
+    if [[ -n "$1" ]] && [[ "$1" != -* ]] && [[ "$1" != "in" ]] && [[ "$1" != "on" ]]; then
+      grep_string="$1"
+      shift
+    fi
+
+    if [[ "$1" == "in" ]]; then
+      if [[ "$2" == "all" ]]; then
+        all_namespaces_opt="--all-namespaces"
+      elif [[ "$2" =~ ^[0-9]+$ ]]; then
+        get_object_details "$2"
+        switch_ns=true
+        namespace_substring="$ITEM_NAME"
+      else
+        switch_ns=true
+        namespace_substring="$2"
+      fi
+      shift 2
+    fi
+
+    if [[ "$1" == "on" ]]; then
+      switch_ctx=true
+      context_substring="$2"
+      shift 2
+    fi
+
+    # support "in" both before and after "on"
+    if [[ "$1" == "in" ]]; then
+      if [[ "$2" == "all" ]]; then
+        all_namespaces_opt="--all-namespaces"
+      else
+        switch_ns=true
+        namespace_substring="$2"
+      fi
+      shift 2
+    fi
+
+    if [ -n "$switch_ctx" ]; then
+      grep_and_switch_cluster "$context_substring"
+    fi
+
+    if [ -n "$switch_ns" ]; then
+      grep_and_switch_namespace "$namespace_substring"
+    fi
+
+    if [[ -n "$1" ]] && [[ "$1" != -* ]] && [ -z "$grep_string" ]; then
+      grep_string="$1"
+      shift
+    fi
+
+    case "$object_type" in
+      "p") object_type="pod"
+      ;;
+      "d") object_type="deployment"
+      ;;
+      "svc") object_type="service"
+      ;;
+      "sa") object_type="ServiceAccount"
+      ;;
+      "a") object_type="applications"
+      ;;
+      "vs") object_type="VirtualServices"
+      ;;
+      "mc") object_type="ManagedCertificate"
+      ;;
+      "se") object_type="ServiceEntry"
+      ;;
+      "sec") object_type="secret"
+      ;;
+      "ss") object_type="StatefulSets"
+      ;;
+      "ds") object_type="DaemonSets"
+      ;;
+      "rs") object_type="ReplicaSets"
+      ;;
+      "rc") object_type="ReplicaControllers"
+      ;;
+      "j") object_type="job"
+      ;;
+      "cj") object_type="cronjob"
+      ;;
+      "gw") object_type="gateway"
+      ;;
+      "i") object_type="ingress"
+      ;;
+      "bc") object_type="BackendConfig"
+      ;;
+      "dr") object_type="DestinationRule"
+      ;;
+      "rb") object_type="rolebinding"
+      ;;
+      "r") object_type="roles"
+      ;;
+      "crb") object_type="clusterrolebinding"
+      ;;
+      "cr") object_type="clusterroles"
+      ;;
+      "ns") object_type="namespace"
+      ;;
+    esac
+
+    read_session_config
+    if [ -n "$all_namespaces_opt" ]; then
+      NAMESPACE="all"
+    fi
+    display_context_details "$object_type"
+
+    if [ -n "$grep_string" ]; then
+      list_items "$object_type" "$all_namespaces_opt" $@ | grep "$grep_string" | less -KEFS
+    else
+      list_items "$object_type" "$all_namespaces_opt" $@ | less -KEFS
+    fi
   fi
 }
 
@@ -774,7 +783,7 @@ handle_logs() {
     item_id="${OBJECT_TYPE}/${ITEM_NAME}"
   fi
   set -x
-  kubectl logs ${CONTEXT_ARGS[@]} "$item_id" $tail_option "$@"
+  $KUBECTL_COLOR logs ${CONTEXT_ARGS[@]} "$item_id" $tail_option "$@"
 }
 
 handle_rr() {
