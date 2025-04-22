@@ -282,6 +282,9 @@ grep_and_switch_namespace() {
     else
       kubectl get namespaces > "$namespaces_file"
     fi
+    tmp_file=$(mktemp)
+    awk '{print $1}' "$namespaces_file" > "$tmp_file"
+    mv "$tmp_file" "$namespaces_file"
   fi
 
   NAMESPACE="$namespace_substring"
@@ -392,6 +395,9 @@ list_items() {
       $KUBECTL_COLOR get "$object_type" $force_color_option ${CONTEXT_ARGS[@]} $@ > "$namespaces_file"
       cat "$namespaces_file" | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
       sed -i 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' "$namespaces_file" # remove ansi color code from namespace cache file
+      tmp_file=$(mktemp)
+      awk '{print $1}' "$namespaces_file" > "$tmp_file"
+      mv "$tmp_file" "$namespaces_file"
     else
       $KUBECTL_COLOR get "$object_type" $force_color_option ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
     fi
