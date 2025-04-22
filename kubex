@@ -382,7 +382,20 @@ list_items() {
     else
       echo "ALL_NAMESPACES=false" >> $LAST_LIST_FILE
     fi
-    $KUBECTL_COLOR get "$object_type" $force_color_option ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
+
+    if [ "$object_type" = "namespace" ]; then
+      # if get object is namespace -> also save it to the namespace cache file
+      if [ "$KUBEX_ISOLATED" = "true" ]; then
+        namespaces_file="$KUBEX_TMP_DIR/namespaces_$CONTEXT.txt"
+      else
+        namespaces_file="$KUBEX_TMP_DIR/namespaces_$(kubectl config current-context).txt"
+      fi
+      $KUBECTL_COLOR get "$object_type" $force_color_option ${CONTEXT_ARGS[@]} $@ > "$namespaces_file"
+      cat "$namespaces_file" | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
+      sed -i 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' "$namespaces_file" # remove ansi color code from namespace cache file
+    else
+      $KUBECTL_COLOR get "$object_type" $force_color_option ${CONTEXT_ARGS[@]} $@ | awk 'NR <= 1 {printf "%4s  %s\n", "", $0; next} {print | "nl -w4 -s\"  \""}' >> $LAST_LIST_FILE
+    fi
     # print but skip the first 2 lines which stores the object type and all_namespaces
     tail -n +3 $LAST_LIST_FILE
   fi
@@ -443,9 +456,10 @@ handle_matching() {
   fi
 
   if [[ ! -f "$file" ]]; then
-    matching_lines=$(echo "$file" | grep -n "$grep_string") || true
+    # if input is a text, not a file
+    matching_lines=$(echo "$file" | grep "$grep_string") || true
   else
-    matching_lines=$(tail -n +2 "$file" | grep -n "$grep_string") || true
+    matching_lines=$(tail -n +2 "$file" | grep "$grep_string") || true
   fi
 
   if [[ -z "$matching_lines" ]]; then
@@ -456,11 +470,9 @@ handle_matching() {
   line_count=$(echo "$matching_lines" | wc -l)
 
   if [[ "$line_count" -eq 1 ]]; then
-    MATCH=$(echo "$matching_lines" | cut -d':' -f2- | awk '{print $1}')
+    MATCH=$(echo "$matching_lines" | awk '{print $1}')
   elif [[ "$line_count" -gt 1 ]]; then
     echo "Multiple matching ${resource_type} found:"
-    # remove number from the file
-    matching_lines=$(echo "$matching_lines" | awk -F: '{print $1 ". " $2}' | awk '{print $2}')
     echo
     echo "$matching_lines" | nl -w4 -s"  "
     echo
@@ -634,7 +646,7 @@ handle_get() {
       ;;
       "cr") object_type="clusterroles"
       ;;
-      "ns") object_type="namespace"
+      "ns" | "namespaces") object_type="namespace"
       ;;
     esac
 
