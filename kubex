@@ -3,7 +3,7 @@
 set -e
 
 # Kubex version
-KUBEX_VERSION="v0.1.2"
+KUBEX_VERSION="v0.2.1"
 
 # Check if kubectl is installed
 if ! command -v kubectl &> /dev/null
@@ -265,8 +265,7 @@ grep_and_switch_namespace() {
   MATCH=""
 
   if [ "$KUBEX_ISOLATED" = "true" ]; then
-    # Use the terminal session ID to isolate the namespace list
-    namespaces_file="$KUBEX_TMP_DIR/namespaces_${CONTEXT}_${SESSION_ID}.txt"
+    namespaces_file="$KUBEX_TMP_DIR/namespaces_$CONTEXT.txt"
   else
     namespaces_file="$KUBEX_TMP_DIR/namespaces_$(kubectl config current-context).txt"
   fi
@@ -536,7 +535,7 @@ handle_get() {
     set_context_args "$OBJECT_TYPE" "$object_type"
     shift
     set -x
-    kubecolor get $OBJECT_TYPE $ITEM_NAME $@
+    $KUBECTL_COLOR get $OBJECT_TYPE $ITEM_NAME ${CONTEXT_ARGS[@]} $@
   else
     if [[ "$object_type" == "help" ]] || [[ -z "$object_type" ]]; then
       show_get_usage

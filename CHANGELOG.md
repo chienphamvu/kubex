@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.2.1
+
+- Cache namespace when users do "kubex get namespace"
+- Fix "kubex get <number>" for isolated case and kubecolor does not exist
+
 ## v0.2.0
 
 - Add support for "kubex get <resource-type> in <number>" when the previous command is "kubex get ns"
