@@ -161,6 +161,17 @@ show_rr_usage() {
   echo "  kubex rr my-deployment"
 }
 
+show_pf_usage() {
+  echo "Usage: kubex pf <resource_number> | <deployment_name>"
+  echo
+  echo "  <resource_number>   The number of the resource from the last 'get' command"
+  echo "  <deployment_name>   The name of the deployment to rollout restart"
+  echo
+  echo "Examples:"
+  echo "  kubex pf 1 8080:8080"
+  echo "  kubex pf deployment/my-deployment 8080:8080"
+}
+
 show_events_usage() {
   echo "Usage: kubex events <resource_number>"
   echo
@@ -816,12 +827,37 @@ handle_rr() {
   shift
 
   get_object_details "$item_number"
+  set_context_args "$OBJECT_TYPE" "$item_number"
+
   item_id="$ITEM_NAME"
   if [ -n "$OBJECT_TYPE" ]; then
     item_id="${OBJECT_TYPE}/${ITEM_NAME}"
   fi
   set -x
-  $KUBECTL_COLOR rollout restart "$item_id"
+  $KUBECTL_COLOR rollout restart ${CONTEXT_ARGS[@]} "$item_id"
+}
+
+handle_pf() {
+  local item_number=$1
+  local object_type
+  local item_name
+
+  if [[ "$item_number" == "help" ]] || [[ -z "$item_number" ]]; then
+    show_pf_usage
+    exit 0
+  fi
+
+  shift
+
+  get_object_details "$item_number"
+  set_context_args "$OBJECT_TYPE" "$item_number"
+
+  item_id="$ITEM_NAME"
+  if [ -n "$OBJECT_TYPE" ]; then
+    item_id="${OBJECT_TYPE}/${ITEM_NAME}"
+  fi
+  set -x
+  $KUBECTL_COLOR port-forward ${CONTEXT_ARGS[@]} "$item_id"
 }
 
 handle_events() {
@@ -897,6 +933,9 @@ case "$COMMAND" in
     ;;
   "rr")
     handle_rr "$@"
+    ;;
+  "pf")
+    handle_pf "$@"
     ;;
   "events"|"ev")
     handle_events "$@"

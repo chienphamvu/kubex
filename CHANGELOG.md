@@ -1,5 +1,6 @@
 # Change Log
 
+- Add support for port forwarding
 ## v0.2.1
 
 - Cache namespace when users do "kubex get namespace"
