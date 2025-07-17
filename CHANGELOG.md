@@ -1,6 +1,13 @@
 # Change Log
 
+## v0.3.0
+
+- Add support for "-w"/"--watch" option for "top" command
+- Add support for "kubex apply"
 - Add support for port forwarding
+- Add support passing yaml file to "kubex delete" with "-f <file>"
+- Fix namespace grep and matching
+
 ## v0.2.1
 
 - Cache namespace when users do "kubex get namespace"
