@@ -769,9 +769,16 @@ handle_top() {
 
     exit 0
   fi
-
-  set -x
-  $KUBECTL_COLOR top ${CONTEXT_ARGS[@]} $OBJECT_TYPE "$ITEM_NAME" "$@"
+  
+  OPTIONS=$(echo "$@" | sed "s/-w//g; s/--watch//g")
+  echo "$KUBECTL_COLOR top ${CONTEXT_ARGS[@]} $OBJECT_TYPE $ITEM_NAME $OPTIONS"
+  $KUBECTL_COLOR top ${CONTEXT_ARGS[@]} $OBJECT_TYPE "$ITEM_NAME" $OPTIONS
+  if [[ "$@" == *"-w"* ]] || [[ "$@" == *"--watch"* ]]; then
+    while true; do
+      sleep 1
+      $KUBECTL_COLOR top ${CONTEXT_ARGS[@]} $OBJECT_TYPE "$ITEM_NAME" $OPTIONS --force-colors | tail -n 1
+    done
+  fi
 }
 
 handle_logs() {
