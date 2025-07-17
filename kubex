@@ -264,7 +264,7 @@ set_context_args() {
 
   if [ "$KUBEX_ISOLATED" = "true" ]; then
     CONTEXT_ARGS+=("--context=$CONTEXT")
-    if [ "$object_type" != "ns" ] && [ "$object_type" != "namespace" ] && [ "$object_type" != "namespaces" ]; then
+    if [ "$object_type" != "ns" ] && [ "$object_type" != "namespace" ] && [ "$object_type" != "namespaces" ] && [ -n "$object_type" ]; then
       CONTEXT_ARGS+=("--namespace=$NAMESPACE")
     fi
   fi
@@ -528,7 +528,7 @@ show_last_list() {
   fi
 
   if [ -n $1 ]; then
-    tail -n +3 "$LAST_LIST_FILE" | grep "$1" | less -KEFS
+    tail -n +3 "$LAST_LIST_FILE" | grep -i "$1" | less -KEFS
   else
     tail -n +3 "$LAST_LIST_FILE" | less -KEFS
   fi
@@ -673,7 +673,7 @@ handle_get() {
     display_context_details "$object_type"
 
     if [ -n "$grep_string" ]; then
-      list_items "$object_type" "$all_namespaces_opt" $@ | grep "$grep_string" | less -KEFS
+      list_items "$object_type" "$all_namespaces_opt" $@ | grep -i "$grep_string" | less -KEFS
     else
       list_items "$object_type" "$all_namespaces_opt" $@ | less -KEFS
     fi
