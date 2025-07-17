@@ -904,7 +904,8 @@ handle_exec() {
 
   get_object_details "$item_number"
   set_context_args "$OBJECT_TYPE" "$item_number"
-  kubectl exec -t -i ${CONTEXT_ARGS[@]} $ITEM_NAME "$@" -- sh -c "(bash || ash || sh)"
+  set -x
+  kubectl exec -it ${CONTEXT_ARGS[@]} $ITEM_NAME "$@" -- sh -c "(bash || ash || sh)"
 }
 
 read_session_config
