@@ -857,7 +857,7 @@ handle_pf() {
     item_id="${OBJECT_TYPE}/${ITEM_NAME}"
   fi
   set -x
-  $KUBECTL_COLOR port-forward ${CONTEXT_ARGS[@]} "$item_id"
+  $KUBECTL_COLOR port-forward ${CONTEXT_ARGS[@]} "$item_id" $@
 }
 
 handle_events() {
