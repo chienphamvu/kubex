@@ -68,16 +68,17 @@ show_kubex_usage() {
   echo "Usage: kubex <command> [options]"
   echo
   echo "Available commands:"
-  echo "  get|g          Get resources"
-  echo "  describe|d     Describe a resource"
+  echo "  apply          Apply a resource/file"
   echo "  delete|del     Delete a resource"
+  echo "  describe|d     Describe a resource"
   echo "  edit|e         Edit a resource"
-  echo "  top|t          Display resource utilization"
-  echo "  switch|s       Switch Kubernetes context"
-  echo "  logs|l         Display logs for a resource"
-  echo "  rr             Rollout restart"
   echo "  events|ev      Display events for a resource"
   echo "  exec           Execute into a pod"
+  echo "  get|g          Get resources"
+  echo "  logs|l         Display logs for a resource"
+  echo "  rr             Rollout restart"
+  echo "  switch|s       Switch Kubernetes context"
+  echo "  top|t          Display resource utilization"
   echo "  version|v      Display kubex and kubectl version"
   echo
   echo "For more information on each command, use: kubex <command> help"
@@ -920,6 +921,12 @@ handle_exec() {
   kubectl exec -it ${CONTEXT_ARGS[@]} $ITEM_NAME "$@" -- sh -c "(bash || ash || sh)"
 }
 
+handle_apply() {
+  set_context_args "$OBJECT_TYPE"
+  set -x
+  $KUBECTL_COLOR apply ${CONTEXT_ARGS[@]} "$@"
+}
+
 read_session_config
 
 case "$COMMAND" in
@@ -955,6 +962,9 @@ case "$COMMAND" in
     ;;
   "exec")
     handle_exec "$@"
+    ;;
+  "apply")
+    handle_apply "$@"
     ;;
   "version"|"v")
     echo "kubex version: $KUBEX_VERSION"
