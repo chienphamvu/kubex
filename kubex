@@ -700,24 +700,29 @@ handle_describe() {
 handle_delete() {
   local item_number=$1
 
-  if [[ "$item_number" == "help" ]] || [[ -z "$item_number" ]]; then
+  if [[ "$item_number" == "help" ]]; then
     show_delete_usage
     exit 0
   fi
 
-  shift
+  if [[ "$item_number" =~ ^[0-9]+$ ]]; then
+    shift
+    get_object_details "$item_number"
 
-  get_object_details "$item_number"
-  set_context_args "$OBJECT_TYPE" "$item_number"
+    set_context_args "$OBJECT_TYPE" "$item_number"
 
-  read -p "Delete $OBJECT_TYPE $ITEM_NAME (y/N)? " -r REPLY
-  echo
+    read -p "Delete $OBJECT_TYPE $ITEM_NAME (y/N)? " -r REPLY
+    echo
 
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    set -x
-    $KUBECTL_COLOR delete ${CONTEXT_ARGS[@]} $OBJECT_TYPE "$ITEM_NAME" "$@"
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      set -x
+      $KUBECTL_COLOR delete ${CONTEXT_ARGS[@]} $OBJECT_TYPE "$ITEM_NAME" "$@"
+    else
+      echo "Keep it then!"
+    fi
   else
-    echo "Keep it then!"
+    set -x
+    $KUBECTL_COLOR delete ${CONTEXT_ARGS[@]} "$@"
   fi
 }
 
