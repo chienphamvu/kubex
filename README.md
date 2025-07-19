@@ -8,55 +8,10 @@
 - **[kubecolor](https://github.com/kubecolor/kubecolor)** (Optional): Provides colored kubectl output. Highly recommended.
 
 ## Installation
-1.  **Install KubeX using brew**
 ```bash
 brew tap chienphamvu/tap
 brew install kubex
 ```
-
-2.  **Add aliases to your shell config (optional - highly recommended):**
-
-    Add these aliases - or any other aliases you can think of - to your shell config (`~/.zshrc` or `~/.bashrc`):
-
-    ```bash
-    alias kg='kubex get'
-    alias kd='kubex describe'
-    alias kdel='kubex delete'
-    alias ke='kubex edit'
-    alias keti='kubex exec'
-    alias kev='kubex events'
-    alias kl='kubex logs'
-    alias kt='kubex top'
-    alias kgp='kubex get pods'
-    alias kgd='kubex get deployments'
-    alias kgns='kubex get namespace'
-    alias kgsa='kubex get serviceaccounts'
-    alias kgcm='kubex get configmap'
-    alias kgcr='kubex get clusterroles'
-    alias kgcrb='kubex get clusterrolebindings'
-    alias kgdr='kubex get destinationrule'
-    alias kgds='kubex get daemonset'
-    alias kgss='kubex get statefulsets'
-    alias kgbc='kubex get backendconfig'
-    alias kgfc='kubex get frontendconfig'
-    alias kggw='kubex get cronjob'
-    alias kghpa='kubex get hpa'
-    alias kgi='kubex get ingress'
-    alias kgl='kubex get last'
-    alias kgn='kubex get nodes'
-    alias kgpdb='kubex get pdb'
-    alias kgr='kubex get roles'
-    alias kgrb='kubex get rolebindings'
-    alias kgrs='kubex get replicaset'
-    alias kgsec='kubex get secrets'
-    alias kgsvc='kubex get service'
-    alias kgmc='kubex get managedcertificates'
-    alias kggw='kubex get gateway'
-    alias kgse='kubex get serviceentry'
-    alias kgvs='kubex get virtualservice'
-    alias krr='kubex rollout restart'
-    alias ks='kubex switch'
-    ```
 
 ## Usage
 
@@ -82,10 +37,6 @@ kubex get <resource> [in <namespace>] [on <context>] [<string>] [flags]
 
 ```bash
 kubex get pods
-```
-or with alias
-```bash
-kgp
 ```
 Output:
 ```
@@ -120,10 +71,6 @@ Describes the pod labeled as #1 from the previous "get pods" result.
 ```bash
 kubex describe 1
 ```
-or with alias
-```bash
-kd 1
-```
 
 Output:
 ```
@@ -139,10 +86,6 @@ View logs of the pod labeled as #1 from the previous "get pods" result.
 ```bash
 kubex logs 1 -f
 ```
-or with alias
-```bash
-kl 1 -f
-```
 Output:
 ```
 ... (pod log output)
@@ -155,10 +98,6 @@ Executes a command within the pod labeled as #1 from the previous "get pods" res
 ```bash
 kubex exec 1
 ```
-or with alias
-```bash
-keti 1
-```
 
 ### View Resource Events
 
@@ -167,20 +106,12 @@ View events of the pod labeled as #1 from the previous "get pods" result.
 ```bash
 kubex events 1
 ```
-or with alias
-```bash
-kev 1
-```
 
 ### Fuzzy Matching
 
 `[in <namespace>]` and `[on <context>]` options in `get` command use fuzzy matching so you don't have to type the full namespace/context name:
 ```
 kubex get pods in app on dev
-```
-Or with alias:
-```
-kgp in app on dev
 ```
 Output:
 ```
@@ -218,10 +149,6 @@ Quickly filter resources from the list with `kubex get <resource> <string>` comm
 ```
 kubex get pods catalog
 ```
-Or with alias
-```
-kgp catalog
-```
 
 Output:
 ```
@@ -237,10 +164,6 @@ Output:
 The last resource list of "get" command can be quickly re-summoned without actually executing kubectl command to get the resource
 ```
 kubex get last
-```
-Or with alias
-```
-kgl
 ```
 This is especially useful to be used together with `<string>` to quicky filter resources from the last list: `kubex get last <string>`
 
@@ -259,10 +182,10 @@ This is especially useful to be used together with `<string>` to quicky filter r
 
 You can set these environment variables in your shell configuration file (e.g., `~/.zshrc` or `~/.bashrc`) using the `export` command, or directly in your terminal. Setting them in your shell configuration file makes them persistent across sessions.
 
--   **`KUBEX_DISABLE_CONTEXT_DETAILS`**: If set to `"true"`, disables the display of context details (cluster, namespace, resource type, scope) before listing resources.  For example: `export KUBEX_DISABLE_CONTEXT_DETAILS="true"`.
--   **`KUBEX_ISOLATED`**: By default, if `in <namespace>` or `on <context>` are used in a command, the namespace/context is automatically switched for all subsequent commands for all terminals since it actually changes the actual kubectl configs. If `KUBEX_ISOLATED` is set to `"true"` in a terminal, namespace/context switching only affects the current terminal. This is especially helpful if you are working on multiple namespaces/contexts at the same time.  You might want to put this variable in your `~/.zshrc` or `~/.bashrc` to always isolate terminals: `export KUBEX_ISOLATED="true"`.
--   **`KUBEX_EXACT_MATCH_NS`**: If set to `"true"`, disable fuzzy matching for namespace and use exact match instead.
--   **`KUBEX_EXACT_MATCH_CONTEXT`**: If set to `"true"`, disable fuzzy matching for context and use exact match instead.
+-   **KUBEX_DISABLE_CONTEXT_DETAILS**: If set to `"true"`, disables the display of context details (cluster, namespace, resource type, scope) before listing resources.  For example: `export KUBEX_DISABLE_CONTEXT_DETAILS="true"`.
+-   **KUBEX_ISOLATED**: By default, if `in <namespace>` or `on <context>` are used in a command, the namespace/context is automatically switched for all subsequent commands for all terminals since it actually changes the actual kubectl configs. If `KUBEX_ISOLATED` is set to `"true"` in a terminal, namespace/context switching only affects the current terminal. This is especially helpful if you are working on multiple namespaces/contexts at the same time.  You might want to put this variable in your `~/.zshrc` or `~/.bashrc` to always isolate terminals: `export KUBEX_ISOLATED="true"`.
+-   **KUBEX_EXACT_MATCH_NS**: If set to `"true"`, disable fuzzy matching for namespace and use exact match instead.
+-   **KUBEX_EXACT_MATCH_CONTEXT**: If set to `"true"`, disable fuzzy matching for context and use exact match instead.
 
 ### Tips
 1. kubectl has support for `KUBE_EDITOR` to point to your preferred editor for the `edit` command instead of relying on the standard `vi`.
@@ -271,3 +194,52 @@ If you're using VS Code on macOS, you can set it as your default editor by addin
 export KUBE_EDITOR="/Applications/'Visual Studio Code.app'/Contents/Resources/app/bin/code --wait"
 ```
 2. Config kubecolor color theme to match with what you like by setting `KUBECOLOR_PRESET` in your `~/.zshrc` or `~/.bashrc`. Please see their documentation https://kubecolor.github.io/customizing/themes/
+3. Use `kubectl config rename-context` to rename your contexts to a more memorable name instead of the default generated one.
+4. Use aliases to shorten commands and greatly improve your experience, e.g. you can add these to your shell config (`~/.zshrc` or `~/.bashrc`):
+```bash
+alias ka='kubex apply'
+alias kd='kubex describe'
+alias kdel='kubex delete'
+alias ke='kubex edit'
+alias keti='kubex exec'
+alias kev='kubex events'
+alias kg='kubex get'
+alias kga='kubex get applications'
+alias kgbc='kubex get backendconfig'
+alias kgcj='kubex get cronjob'
+alias kgcm='kubex get configmap'
+alias kgcr='kubex get clusterroles'
+alias kgcrb='kubex get clusterrolebindings'
+alias kgd='kubex get deployments'
+alias kgdr='kubex get destinationrule'
+alias kgds='kubex get daemonset'
+alias kge='kubex get endpoints'
+alias kgfc='kubex get frontendconfig'
+alias kggw='kubex get gateway'
+alias kghpa='kubex get hpa'
+alias kgi='kubex get ingress'
+alias kgj='kubex get job'
+alias kgl='kubex get last'
+alias kgmc='kubex get managedcertificates'
+alias kgn='kubex get nodes'
+alias kgnp='kubex get networkpolicy'
+alias kgns='kubex get namespace'
+alias kgp='kubex get pods'
+alias kgpdb='kubex get pdb'
+alias kgpv='kubex get pv'
+alias kgpvc='kubex get pvc'
+alias kgr='kubex get roles'
+alias kgrb='kubex get rolebindings'
+alias kgrs='kubex get replicaset'
+alias kgsa='kubex get serviceaccounts'
+alias kgse='kubex get serviceentry'
+alias kgsec='kubex get secrets'
+alias kgss='kubex get statefulsets'
+alias kgsvc='kubex get service'
+alias kgvs='kubex get virtualservice'
+alias kl='kubex logs'
+alias kpf='kubex pf'
+alias krr='kubex rr'
+alias ks='kubex switch'
+alias kt='kubex top'
+```
